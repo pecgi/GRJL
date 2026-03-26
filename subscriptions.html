@@ -1,0 +1,896 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>我的订阅管理</title>
+  <style>
+    :root {
+      --bg: #f5f6fa;
+      --surface: #ffffff;
+      --primary: #5c6bc0;
+      --primary-light: #e8eaf6;
+      --primary-dark: #3949ab;
+      --accent: #ff7043;
+      --text: #2d2d2d;
+      --text-sub: #777;
+      --border: #e0e0e0;
+      --success: #43a047;
+      --warn: #fb8c00;
+      --danger: #e53935;
+      --radius: 14px;
+      --shadow: 0 2px 16px rgba(0,0,0,0.07);
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+    }
+
+    /* ── Header ── */
+    header {
+      background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+      color: #fff;
+      padding: 28px 32px 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 16px;
+    }
+    header h1 { font-size: 1.6rem; font-weight: 700; letter-spacing: 0.5px; }
+    header h1 span { opacity: .75; font-size: 1rem; margin-left: 8px; }
+    .btn-add {
+      background: #fff;
+      color: var(--primary-dark);
+      border: none;
+      padding: 10px 22px;
+      border-radius: 50px;
+      font-size: .95rem;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      transition: transform .15s, box-shadow .15s;
+      box-shadow: 0 2px 8px rgba(0,0,0,.2);
+    }
+    .btn-add:hover { transform: translateY(-1px); box-shadow: 0 4px 14px rgba(0,0,0,.25); }
+
+    /* ── Stats Bar ── */
+    .stats-bar {
+      display: flex;
+      gap: 16px;
+      flex-wrap: wrap;
+      padding: 20px 32px;
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+    }
+    .stat-card {
+      flex: 1;
+      min-width: 140px;
+      background: var(--bg);
+      border-radius: 10px;
+      padding: 14px 18px;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    .stat-card .label { font-size: .78rem; color: var(--text-sub); text-transform: uppercase; letter-spacing: .5px; }
+    .stat-card .value { font-size: 1.5rem; font-weight: 700; color: var(--primary); }
+    .stat-card .sub { font-size: .8rem; color: var(--text-sub); }
+
+    /* ── Filters / Search ── */
+    .toolbar {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 18px 32px 4px;
+      flex-wrap: wrap;
+    }
+    .search-wrap {
+      flex: 1;
+      min-width: 200px;
+      position: relative;
+    }
+    .search-wrap input {
+      width: 100%;
+      padding: 9px 16px 9px 38px;
+      border-radius: 50px;
+      border: 1px solid var(--border);
+      font-size: .92rem;
+      background: var(--surface);
+      outline: none;
+      transition: border-color .2s;
+    }
+    .search-wrap input:focus { border-color: var(--primary); }
+    .search-wrap svg {
+      position: absolute;
+      left: 12px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--text-sub);
+    }
+    .filter-btn {
+      padding: 9px 18px;
+      border-radius: 50px;
+      border: 1px solid var(--border);
+      background: var(--surface);
+      cursor: pointer;
+      font-size: .88rem;
+      transition: all .15s;
+    }
+    .filter-btn.active, .filter-btn:hover {
+      background: var(--primary);
+      color: #fff;
+      border-color: var(--primary);
+    }
+
+    /* ── Cards Grid ── */
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 18px;
+      padding: 20px 32px 40px;
+    }
+    .card {
+      background: var(--surface);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      transition: transform .15s, box-shadow .15s;
+      position: relative;
+      overflow: hidden;
+    }
+    .card:hover { transform: translateY(-3px); box-shadow: 0 8px 28px rgba(0,0,0,.11); }
+    .card-stripe {
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 4px;
+    }
+    .card-header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 8px;
+    }
+    .card-icon {
+      width: 42px; height: 42px;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.4rem;
+      flex-shrink: 0;
+    }
+    .card-title { font-size: 1.05rem; font-weight: 700; line-height: 1.3; }
+    .card-platform { font-size: .8rem; color: var(--text-sub); margin-top: 2px; }
+    .card-actions { display: flex; gap: 6px; }
+    .icon-btn {
+      background: none;
+      border: none;
+      cursor: pointer;
+      padding: 4px;
+      border-radius: 6px;
+      color: var(--text-sub);
+      transition: background .15s, color .15s;
+    }
+    .icon-btn:hover { background: var(--bg); color: var(--text); }
+
+    .card-price {
+      display: flex;
+      align-items: baseline;
+      gap: 6px;
+    }
+    .card-price .amount { font-size: 1.5rem; font-weight: 800; color: var(--primary); }
+    .card-price .cycle { font-size: .82rem; color: var(--text-sub); }
+
+    .card-meta {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .meta-row {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: .83rem;
+      color: var(--text-sub);
+    }
+    .meta-row svg { flex-shrink: 0; }
+
+    .tag {
+      display: inline-block;
+      padding: 3px 10px;
+      border-radius: 50px;
+      font-size: .75rem;
+      font-weight: 600;
+      background: var(--primary-light);
+      color: var(--primary);
+    }
+
+    .badge {
+      padding: 3px 10px;
+      border-radius: 50px;
+      font-size: .75rem;
+      font-weight: 600;
+    }
+    .badge-green { background: #e8f5e9; color: var(--success); }
+    .badge-warn { background: #fff3e0; color: var(--warn); }
+    .badge-red { background: #ffebee; color: var(--danger); }
+    .badge-grey { background: #f5f5f5; color: #999; }
+
+    .card-note {
+      font-size: .82rem;
+      color: var(--text-sub);
+      background: var(--bg);
+      border-radius: 8px;
+      padding: 8px 10px;
+      line-height: 1.5;
+    }
+
+    /* ── Empty State ── */
+    .empty {
+      grid-column: 1/-1;
+      text-align: center;
+      padding: 60px 20px;
+      color: var(--text-sub);
+    }
+    .empty svg { opacity: .3; margin-bottom: 16px; }
+    .empty p { font-size: 1rem; }
+
+    /* ── Modal ── */
+    .overlay {
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,.45);
+      backdrop-filter: blur(3px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+      padding: 16px;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity .2s;
+    }
+    .overlay.open { opacity: 1; pointer-events: all; }
+    .modal {
+      background: var(--surface);
+      border-radius: 18px;
+      padding: 28px;
+      width: 100%;
+      max-width: 480px;
+      max-height: 90vh;
+      overflow-y: auto;
+      transform: translateY(20px);
+      transition: transform .2s;
+    }
+    .overlay.open .modal { transform: translateY(0); }
+    .modal h2 { font-size: 1.2rem; margin-bottom: 20px; }
+    .form-group { margin-bottom: 16px; }
+    .form-group label {
+      display: block;
+      font-size: .85rem;
+      font-weight: 600;
+      margin-bottom: 6px;
+      color: var(--text-sub);
+    }
+    .form-group input,
+    .form-group select,
+    .form-group textarea {
+      width: 100%;
+      padding: 10px 14px;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      font-size: .93rem;
+      font-family: inherit;
+      outline: none;
+      transition: border-color .2s;
+      background: var(--bg);
+    }
+    .form-group input:focus,
+    .form-group select:focus,
+    .form-group textarea:focus { border-color: var(--primary); background: #fff; }
+    .form-group textarea { resize: vertical; min-height: 72px; }
+    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .emoji-picker {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-top: 6px;
+    }
+    .emoji-opt {
+      font-size: 1.4rem;
+      cursor: pointer;
+      padding: 4px 6px;
+      border-radius: 8px;
+      border: 2px solid transparent;
+      transition: border-color .15s;
+    }
+    .emoji-opt.selected { border-color: var(--primary); background: var(--primary-light); }
+    .color-picker {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-top: 6px;
+    }
+    .color-opt {
+      width: 26px; height: 26px;
+      border-radius: 50%;
+      cursor: pointer;
+      border: 3px solid transparent;
+      transition: transform .15s, border-color .15s;
+    }
+    .color-opt.selected { border-color: var(--text); transform: scale(1.2); }
+    .modal-actions {
+      display: flex;
+      gap: 10px;
+      justify-content: flex-end;
+      margin-top: 20px;
+    }
+    .btn {
+      padding: 10px 22px;
+      border-radius: 50px;
+      border: none;
+      cursor: pointer;
+      font-size: .93rem;
+      font-weight: 600;
+      transition: opacity .15s;
+    }
+    .btn:hover { opacity: .85; }
+    .btn-primary { background: var(--primary); color: #fff; }
+    .btn-ghost { background: var(--bg); color: var(--text); }
+
+    /* ── Confirm Dialog ── */
+    .confirm-overlay {
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,.45);
+      display: flex; align-items: center; justify-content: center;
+      z-index: 2000;
+      opacity: 0; pointer-events: none; transition: opacity .15s;
+    }
+    .confirm-overlay.open { opacity: 1; pointer-events: all; }
+    .confirm-box {
+      background: #fff; border-radius: 16px; padding: 28px 28px 20px;
+      max-width: 360px; width: 90%; text-align: center;
+    }
+    .confirm-box h3 { margin-bottom: 10px; font-size: 1.1rem; }
+    .confirm-box p { color: var(--text-sub); font-size: .9rem; margin-bottom: 20px; }
+    .confirm-box .modal-actions { justify-content: center; }
+
+    /* ── Toast ── */
+    #toast {
+      position: fixed;
+      bottom: 24px; left: 50%; transform: translateX(-50%) translateY(80px);
+      background: #333; color: #fff;
+      padding: 10px 22px; border-radius: 50px;
+      font-size: .88rem;
+      z-index: 9999;
+      transition: transform .3s, opacity .3s;
+      opacity: 0;
+    }
+    #toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
+
+    @media (max-width: 600px) {
+      header, .stats-bar, .toolbar, .grid { padding-left: 16px; padding-right: 16px; }
+      .form-row { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- Header -->
+<header>
+  <div>
+    <h1>📋 我的订阅 <span id="hdr-count"></span></h1>
+  </div>
+  <button class="btn-add" onclick="openModal()">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+    添加订阅
+  </button>
+</header>
+
+<!-- Stats -->
+<div class="stats-bar">
+  <div class="stat-card">
+    <div class="label">订阅总数</div>
+    <div class="value" id="stat-total">0</div>
+    <div class="sub">个活跃订阅</div>
+  </div>
+  <div class="stat-card">
+    <div class="label">月支出</div>
+    <div class="value" id="stat-monthly">¥0</div>
+    <div class="sub">折算月费用</div>
+  </div>
+  <div class="stat-card">
+    <div class="label">年支出</div>
+    <div class="value" id="stat-yearly">¥0</div>
+    <div class="sub">折算年费用</div>
+  </div>
+  <div class="stat-card">
+    <div class="label">即将到期</div>
+    <div class="value" id="stat-expiring" style="color: var(--warn)">0</div>
+    <div class="sub">30天内到期</div>
+  </div>
+</div>
+
+<!-- Toolbar -->
+<div class="toolbar">
+  <div class="search-wrap">
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+    <input type="text" id="search-input" placeholder="搜索订阅名称 / 平台…" oninput="renderCards()">
+  </div>
+  <button class="filter-btn active" data-filter="all" onclick="setFilter(this)">全部</button>
+  <button class="filter-btn" data-filter="active" onclick="setFilter(this)">有效</button>
+  <button class="filter-btn" data-filter="expiring" onclick="setFilter(this)">即将到期</button>
+  <button class="filter-btn" data-filter="expired" onclick="setFilter(this)">已过期</button>
+  <button class="filter-btn" data-filter="inactive" onclick="setFilter(this)">已取消</button>
+</div>
+
+<!-- Cards -->
+<div class="grid" id="grid"></div>
+
+<!-- ── Add/Edit Modal ── -->
+<div class="overlay" id="modal-overlay" onclick="overlayClick(event)">
+  <div class="modal">
+    <h2 id="modal-title">添加订阅</h2>
+
+    <div class="form-group">
+      <label>订阅名称 *</label>
+      <input type="text" id="f-name" placeholder="例如：小报童专栏「科技日报」" />
+    </div>
+
+    <div class="form-row">
+      <div class="form-group">
+        <label>平台 *</label>
+        <select id="f-platform">
+          <option value="">选择平台</option>
+          <option value="小报童">小报童</option>
+          <option value="知识星球">知识星球</option>
+          <option value="得到">得到</option>
+          <option value="微信读书">微信读书</option>
+          <option value="爱奇艺">爱奇艺</option>
+          <option value="B站大会员">B站大会员</option>
+          <option value="Netflix">Netflix</option>
+          <option value="Spotify">Spotify</option>
+          <option value="Apple One">Apple One</option>
+          <option value="ChatGPT Plus">ChatGPT Plus</option>
+          <option value="其他">其他</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>自定义平台名（可选）</label>
+        <input type="text" id="f-platform-custom" placeholder="如未在列表中" />
+      </div>
+    </div>
+
+    <div class="form-row">
+      <div class="form-group">
+        <label>费用 (¥) *</label>
+        <input type="number" id="f-price" min="0" step="0.01" placeholder="0.00" />
+      </div>
+      <div class="form-group">
+        <label>计费周期</label>
+        <select id="f-cycle">
+          <option value="monthly">月付</option>
+          <option value="quarterly">季付</option>
+          <option value="yearly">年付</option>
+          <option value="once">一次性</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="form-row">
+      <div class="form-group">
+        <label>开始日期</label>
+        <input type="date" id="f-start" />
+      </div>
+      <div class="form-group">
+        <label>到期日期</label>
+        <input type="date" id="f-expire" />
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label>状态</label>
+      <select id="f-status">
+        <option value="active">有效订阅中</option>
+        <option value="inactive">已取消</option>
+      </select>
+    </div>
+
+    <div class="form-group">
+      <label>图标</label>
+      <div class="emoji-picker" id="emoji-picker"></div>
+    </div>
+
+    <div class="form-group">
+      <label>卡片颜色</label>
+      <div class="color-picker" id="color-picker"></div>
+    </div>
+
+    <div class="form-group">
+      <label>备注</label>
+      <textarea id="f-note" placeholder="记录内容简介、推荐理由等…"></textarea>
+    </div>
+
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="closeModal()">取消</button>
+      <button class="btn btn-primary" onclick="saveSubscription()">保存</button>
+    </div>
+  </div>
+</div>
+
+<!-- Confirm Dialog -->
+<div class="confirm-overlay" id="confirm-overlay">
+  <div class="confirm-box">
+    <h3>确认删除</h3>
+    <p>删除后无法恢复，确定要删除这个订阅吗？</p>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="closeConfirm()">取消</button>
+      <button class="btn btn-primary" style="background:var(--danger)" id="confirm-ok">删除</button>
+    </div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div id="toast"></div>
+
+<script>
+// ── Data ──────────────────────────────────────────────
+const STORAGE_KEY = 'my_subscriptions_v1';
+let subscriptions = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
+let editingId = null;
+let deleteId = null;
+let currentFilter = 'all';
+
+const EMOJIS = ['📋','📚','🎓','📰','💡','🎯','🎵','🎬','💻','🌐','⭐','🏆','🔑','🗞️','📊','🎮','🤖','🌟','💎','🔥'];
+const COLORS = ['#5c6bc0','#26a69a','#ef5350','#ff7043','#ab47bc','#42a5f5','#66bb6a','#ffca28','#8d6e63','#78909c'];
+
+let selectedEmoji = EMOJIS[0];
+let selectedColor = COLORS[0];
+
+// ── Init ──────────────────────────────────────────────
+function init() {
+  buildEmojiPicker();
+  buildColorPicker();
+  renderCards();
+  updateStats();
+  // Pre-fill today's date
+  document.getElementById('f-start').value = today();
+}
+
+function today() {
+  return new Date().toISOString().slice(0, 10);
+}
+
+function save() {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(subscriptions));
+}
+
+// ── Stats ─────────────────────────────────────────────
+function updateStats() {
+  const active = subscriptions.filter(s => s.status === 'active');
+  document.getElementById('stat-total').textContent = active.length;
+  document.getElementById('hdr-count').textContent = subscriptions.length ? `(${subscriptions.length})` : '';
+
+  let monthly = 0;
+  active.forEach(s => {
+    const p = parseFloat(s.price) || 0;
+    if (s.cycle === 'monthly') monthly += p;
+    else if (s.cycle === 'quarterly') monthly += p / 3;
+    else if (s.cycle === 'yearly') monthly += p / 12;
+  });
+  document.getElementById('stat-monthly').textContent = '¥' + monthly.toFixed(0);
+  document.getElementById('stat-yearly').textContent = '¥' + (monthly * 12).toFixed(0);
+
+  const expiring = active.filter(s => {
+    if (!s.expire) return false;
+    const days = daysUntil(s.expire);
+    return days >= 0 && days <= 30;
+  }).length;
+  document.getElementById('stat-expiring').textContent = expiring;
+}
+
+function daysUntil(dateStr) {
+  if (!dateStr) return Infinity;
+  const diff = new Date(dateStr) - new Date(today());
+  return Math.ceil(diff / (1000 * 60 * 60 * 24));
+}
+
+// ── Status helpers ─────────────────────────────────────
+function getExpireStatus(s) {
+  if (s.status !== 'active') return 'inactive';
+  if (!s.expire) return 'active';
+  const days = daysUntil(s.expire);
+  if (days < 0) return 'expired';
+  if (days <= 30) return 'expiring';
+  return 'active';
+}
+
+function statusBadge(s) {
+  const st = getExpireStatus(s);
+  if (st === 'inactive') return '<span class="badge badge-grey">已取消</span>';
+  if (st === 'expired') return '<span class="badge badge-red">已过期</span>';
+  if (st === 'expiring') {
+    const d = daysUntil(s.expire);
+    return `<span class="badge badge-warn">还剩 ${d} 天</span>`;
+  }
+  if (s.expire) {
+    const d = daysUntil(s.expire);
+    return `<span class="badge badge-green">剩 ${d} 天</span>`;
+  }
+  return '<span class="badge badge-green">订阅中</span>';
+}
+
+function cycleName(c) {
+  return { monthly:'/ 月', quarterly:'/ 季', yearly:'/ 年', once:'一次性' }[c] || '';
+}
+
+// ── Filter ────────────────────────────────────────────
+function setFilter(el) {
+  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+  el.classList.add('active');
+  currentFilter = el.dataset.filter;
+  renderCards();
+}
+
+function matchFilter(s) {
+  const st = getExpireStatus(s);
+  if (currentFilter === 'all') return true;
+  if (currentFilter === 'active') return st === 'active';
+  if (currentFilter === 'expiring') return st === 'expiring';
+  if (currentFilter === 'expired') return st === 'expired';
+  if (currentFilter === 'inactive') return st === 'inactive';
+  return true;
+}
+
+// ── Render ────────────────────────────────────────────
+function renderCards() {
+  const q = document.getElementById('search-input').value.trim().toLowerCase();
+  const grid = document.getElementById('grid');
+
+  let list = subscriptions.filter(s => {
+    if (q) {
+      const hay = ((s.name || '') + (s.platform || '') + (s.note || '')).toLowerCase();
+      if (!hay.includes(q)) return false;
+    }
+    return matchFilter(s);
+  });
+
+  if (!list.length) {
+    grid.innerHTML = `<div class="empty">
+      <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="3"/><line x1="9" y1="9" x2="15" y2="9"/><line x1="9" y1="12" x2="15" y2="12"/><line x1="9" y1="15" x2="13" y2="15"/></svg>
+      <p>${subscriptions.length ? '没有符合条件的订阅' : '还没有订阅，点击右上角「添加订阅」开始吧！'}</p>
+    </div>`;
+    return;
+  }
+
+  grid.innerHTML = list.map(s => cardHTML(s)).join('');
+}
+
+function cardHTML(s) {
+  const color = s.color || COLORS[0];
+  const emoji = s.emoji || EMOJIS[0];
+  const platform = s.platformCustom || s.platform || '';
+  return `
+  <div class="card" id="card-${s.id}">
+    <div class="card-stripe" style="background:${color}"></div>
+    <div class="card-header">
+      <div style="display:flex;align-items:center;gap:10px;flex:1;min-width:0">
+        <div class="card-icon" style="background:${color}22">${emoji}</div>
+        <div style="min-width:0">
+          <div class="card-title" style="color:${color}">${esc(s.name)}</div>
+          ${platform ? `<div class="card-platform">${esc(platform)}</div>` : ''}
+        </div>
+      </div>
+      <div class="card-actions">
+        <button class="icon-btn" title="编辑" onclick="openEdit('${s.id}')">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+        </button>
+        <button class="icon-btn" title="删除" onclick="confirmDelete('${s.id}')">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/></svg>
+        </button>
+      </div>
+    </div>
+
+    <div class="card-price">
+      <span class="amount">¥${parseFloat(s.price || 0).toFixed(2)}</span>
+      <span class="cycle">${cycleName(s.cycle)}</span>
+    </div>
+
+    <div class="card-meta">
+      ${s.expire ? `<div class="meta-row">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+        到期：${s.expire}
+      </div>` : ''}
+      ${s.start ? `<div class="meta-row">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+        开始：${s.start}
+      </div>` : ''}
+      <div class="meta-row">
+        ${statusBadge(s)}
+      </div>
+    </div>
+
+    ${s.note ? `<div class="card-note">${esc(s.note)}</div>` : ''}
+  </div>`;
+}
+
+function esc(str) {
+  return (str || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// ── Emoji / Color Picker ──────────────────────────────
+function buildEmojiPicker() {
+  const el = document.getElementById('emoji-picker');
+  el.innerHTML = EMOJIS.map(e =>
+    `<span class="emoji-opt${e===selectedEmoji?' selected':''}" onclick="pickEmoji(this,'${e}')">${e}</span>`
+  ).join('');
+}
+
+function pickEmoji(el, emoji) {
+  selectedEmoji = emoji;
+  document.querySelectorAll('.emoji-opt').forEach(e => e.classList.remove('selected'));
+  el.classList.add('selected');
+}
+
+function buildColorPicker() {
+  const el = document.getElementById('color-picker');
+  el.innerHTML = COLORS.map(c =>
+    `<div class="color-opt${c===selectedColor?' selected':''}" style="background:${c}" onclick="pickColor(this,'${c}')"></div>`
+  ).join('');
+}
+
+function pickColor(el, color) {
+  selectedColor = color;
+  document.querySelectorAll('.color-opt').forEach(e => e.classList.remove('selected'));
+  el.classList.add('selected');
+}
+
+// ── Modal ─────────────────────────────────────────────
+function openModal(prefill) {
+  editingId = null;
+  document.getElementById('modal-title').textContent = '添加订阅';
+  document.getElementById('f-name').value = '';
+  document.getElementById('f-platform').value = '';
+  document.getElementById('f-platform-custom').value = '';
+  document.getElementById('f-price').value = '';
+  document.getElementById('f-cycle').value = 'monthly';
+  document.getElementById('f-start').value = today();
+  document.getElementById('f-expire').value = '';
+  document.getElementById('f-status').value = 'active';
+  document.getElementById('f-note').value = '';
+  selectedEmoji = EMOJIS[0];
+  selectedColor = COLORS[0];
+  buildEmojiPicker();
+  buildColorPicker();
+  document.getElementById('modal-overlay').classList.add('open');
+}
+
+function openEdit(id) {
+  const s = subscriptions.find(x => x.id === id);
+  if (!s) return;
+  editingId = id;
+  document.getElementById('modal-title').textContent = '编辑订阅';
+  document.getElementById('f-name').value = s.name || '';
+  document.getElementById('f-platform').value = s.platform || '';
+  document.getElementById('f-platform-custom').value = s.platformCustom || '';
+  document.getElementById('f-price').value = s.price || '';
+  document.getElementById('f-cycle').value = s.cycle || 'monthly';
+  document.getElementById('f-start').value = s.start || '';
+  document.getElementById('f-expire').value = s.expire || '';
+  document.getElementById('f-status').value = s.status || 'active';
+  document.getElementById('f-note').value = s.note || '';
+  selectedEmoji = s.emoji || EMOJIS[0];
+  selectedColor = s.color || COLORS[0];
+  buildEmojiPicker();
+  buildColorPicker();
+  document.getElementById('modal-overlay').classList.add('open');
+}
+
+function closeModal() {
+  document.getElementById('modal-overlay').classList.remove('open');
+}
+
+function overlayClick(e) {
+  if (e.target === document.getElementById('modal-overlay')) closeModal();
+}
+
+function saveSubscription() {
+  const name = document.getElementById('f-name').value.trim();
+  const platform = document.getElementById('f-platform').value;
+  const platformCustom = document.getElementById('f-platform-custom').value.trim();
+  const price = document.getElementById('f-price').value;
+  if (!name) { showToast('请填写订阅名称'); return; }
+
+  const data = {
+    name,
+    platform,
+    platformCustom,
+    price,
+    cycle: document.getElementById('f-cycle').value,
+    start: document.getElementById('f-start').value,
+    expire: document.getElementById('f-expire').value,
+    status: document.getElementById('f-status').value,
+    note: document.getElementById('f-note').value.trim(),
+    emoji: selectedEmoji,
+    color: selectedColor,
+  };
+
+  if (editingId) {
+    const idx = subscriptions.findIndex(s => s.id === editingId);
+    if (idx > -1) subscriptions[idx] = { ...subscriptions[idx], ...data };
+    showToast('✅ 已更新');
+  } else {
+    data.id = Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+    data.createdAt = new Date().toISOString();
+    subscriptions.unshift(data);
+    showToast('✅ 已添加');
+  }
+
+  save();
+  closeModal();
+  renderCards();
+  updateStats();
+}
+
+// ── Delete ────────────────────────────────────────────
+function confirmDelete(id) {
+  deleteId = id;
+  document.getElementById('confirm-overlay').classList.add('open');
+  document.getElementById('confirm-ok').onclick = () => {
+    subscriptions = subscriptions.filter(s => s.id !== deleteId);
+    save();
+    renderCards();
+    updateStats();
+    closeConfirm();
+    showToast('🗑️ 已删除');
+  };
+}
+
+function closeConfirm() {
+  document.getElementById('confirm-overlay').classList.remove('open');
+  deleteId = null;
+}
+
+// ── Toast ─────────────────────────────────────────────
+let toastTimer;
+function showToast(msg) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => el.classList.remove('show'), 2200);
+}
+
+// ── Demo Data ─────────────────────────────────────────
+function addDemoData() {
+  if (subscriptions.length > 0) return;
+  const demos = [
+    { name:'科技周报', platform:'小报童', price:'39', cycle:'yearly', start:'2025-12-01', expire:'2026-11-30', status:'active', emoji:'🗞️', color:'#5c6bc0', note:'科技前沿资讯，每周更新。' },
+    { name:'商业内参 Pro', platform:'知识星球', price:'299', cycle:'yearly', start:'2026-01-10', expire:'2027-01-09', status:'active', emoji:'💡', color:'#26a69a', note:'行业大咖分享，附每月直播。' },
+    { name:'ChatGPT Plus', platform:'ChatGPT Plus', price:'140', cycle:'monthly', start:'2026-03-01', expire:'2026-04-01', status:'active', emoji:'🤖', color:'#42a5f5', note:'GPT-4o，用于日常工作辅助。' },
+    { name:'微信读书无限卡', platform:'微信读书', price:'19', cycle:'monthly', start:'2026-02-15', expire:'2026-04-15', status:'active', emoji:'📚', color:'#66bb6a', note:'无限读书，书单持续更新。' },
+  ];
+  demos.forEach(d => {
+    d.id = Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+    d.createdAt = new Date().toISOString();
+    d.platformCustom = '';
+  });
+  subscriptions = demos;
+  save();
+  renderCards();
+  updateStats();
+}
+
+init();
+addDemoData();
+</script>
+</body>
+</html>
