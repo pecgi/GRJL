@@ -4,6 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>我的订阅管理</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
     :root {
       --bg: #f5f6fa;
@@ -29,26 +30,118 @@
       min-height: 100vh;
     }
 
+    /* ── Auth Screen ── */
+    #auth-screen {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    }
+    .auth-card {
+      background: #fff;
+      border-radius: 24px;
+      padding: 40px 36px;
+      width: 100%;
+      max-width: 400px;
+      box-shadow: 0 20px 60px rgba(0,0,0,.2);
+      text-align: center;
+    }
+    .auth-card .logo { font-size: 2.8rem; margin-bottom: 8px; }
+    .auth-card h1 { font-size: 1.5rem; font-weight: 700; margin-bottom: 6px; }
+    .auth-card .subtitle { color: var(--text-sub); font-size: .9rem; margin-bottom: 32px; }
+    .auth-divider {
+      display: flex; align-items: center; gap: 12px;
+      margin: 20px 0;
+      color: var(--text-sub); font-size: .82rem;
+    }
+    .auth-divider::before, .auth-divider::after {
+      content: ''; flex: 1; height: 1px; background: var(--border);
+    }
+    .btn-auth-github {
+      width: 100%;
+      padding: 13px;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      background: #fff;
+      font-size: .95rem;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      transition: background .15s, box-shadow .15s;
+    }
+    .btn-auth-github:hover { background: #f6f8fa; box-shadow: 0 2px 8px rgba(0,0,0,.1); }
+    .auth-form { text-align: left; }
+    .auth-form .form-group { margin-bottom: 14px; }
+    .auth-form label { display: block; font-size: .83rem; font-weight: 600; margin-bottom: 5px; color: var(--text-sub); }
+    .auth-form input {
+      width: 100%; padding: 11px 14px;
+      border: 1px solid var(--border); border-radius: 10px;
+      font-size: .93rem; outline: none;
+      transition: border-color .2s;
+    }
+    .auth-form input:focus { border-color: var(--primary); }
+    .btn-auth-email {
+      width: 100%; padding: 13px;
+      background: var(--primary); color: #fff;
+      border: none; border-radius: 12px;
+      font-size: .95rem; font-weight: 600;
+      cursor: pointer;
+      transition: opacity .15s;
+      margin-top: 4px;
+    }
+    .btn-auth-email:hover { opacity: .88; }
+    .auth-toggle {
+      text-align: center; margin-top: 14px;
+      font-size: .85rem; color: var(--text-sub);
+    }
+    .auth-toggle a { color: var(--primary); cursor: pointer; text-decoration: none; font-weight: 600; }
+    .auth-toggle a:hover { text-decoration: underline; }
+    .auth-msg { font-size: .85rem; color: var(--danger); margin-top: 10px; text-align: center; min-height: 20px; }
+    .auth-msg.success { color: var(--success); }
+
+    /* ── App ── */
+    #app-screen { display: none; }
+
     /* ── Header ── */
     header {
       background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
       color: #fff;
-      padding: 28px 32px 24px;
+      padding: 20px 32px;
       display: flex;
       align-items: center;
       justify-content: space-between;
       flex-wrap: wrap;
-      gap: 16px;
+      gap: 12px;
     }
-    header h1 { font-size: 1.6rem; font-weight: 700; letter-spacing: 0.5px; }
-    header h1 span { opacity: .75; font-size: 1rem; margin-left: 8px; }
+    header h1 { font-size: 1.5rem; font-weight: 700; }
+    header h1 span { opacity: .7; font-size: .92rem; margin-left: 8px; }
+    .header-right { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+    .user-badge {
+      display: flex; align-items: center; gap: 8px;
+      background: rgba(255,255,255,.15);
+      border-radius: 50px;
+      padding: 6px 14px 6px 8px;
+      font-size: .85rem;
+    }
+    .user-avatar {
+      width: 28px; height: 28px; border-radius: 50%;
+      background: rgba(255,255,255,.3);
+      display: flex; align-items: center; justify-content: center;
+      font-size: .85rem; overflow: hidden;
+    }
+    .user-avatar img { width: 100%; height: 100%; object-fit: cover; }
     .btn-add {
       background: #fff;
       color: var(--primary-dark);
       border: none;
-      padding: 10px 22px;
+      padding: 9px 20px;
       border-radius: 50px;
-      font-size: .95rem;
+      font-size: .9rem;
       font-weight: 600;
       cursor: pointer;
       display: flex;
@@ -58,6 +151,28 @@
       box-shadow: 0 2px 8px rgba(0,0,0,.2);
     }
     .btn-add:hover { transform: translateY(-1px); box-shadow: 0 4px 14px rgba(0,0,0,.25); }
+    .btn-logout {
+      background: rgba(255,255,255,.15);
+      border: 1px solid rgba(255,255,255,.3);
+      color: #fff;
+      padding: 7px 14px;
+      border-radius: 50px;
+      font-size: .83rem;
+      cursor: pointer;
+      transition: background .15s;
+    }
+    .btn-logout:hover { background: rgba(255,255,255,.25); }
+
+    /* ── Loading ── */
+    .loading-bar {
+      height: 3px;
+      background: linear-gradient(90deg, var(--primary), #a78bfa, var(--primary));
+      background-size: 200%;
+      animation: shimmer 1.5s infinite;
+      display: none;
+    }
+    .loading-bar.show { display: block; }
+    @keyframes shimmer { 0%{background-position:200% 0} 100%{background-position:-200% 0} }
 
     /* ── Stats Bar ── */
     .stats-bar {
@@ -70,7 +185,7 @@
     }
     .stat-card {
       flex: 1;
-      min-width: 140px;
+      min-width: 130px;
       background: var(--bg);
       border-radius: 10px;
       padding: 14px 18px;
@@ -148,11 +263,7 @@
       overflow: hidden;
     }
     .card:hover { transform: translateY(-3px); box-shadow: 0 8px 28px rgba(0,0,0,.11); }
-    .card-stripe {
-      position: absolute;
-      top: 0; left: 0; right: 0;
-      height: 4px;
-    }
+    .card-stripe { position: absolute; top: 0; left: 0; right: 0; height: 4px; }
     .card-header {
       display: flex;
       align-items: flex-start;
@@ -162,76 +273,37 @@
     .card-icon {
       width: 42px; height: 42px;
       border-radius: 10px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 1.4rem;
-      flex-shrink: 0;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.4rem; flex-shrink: 0;
     }
     .card-title { font-size: 1.05rem; font-weight: 700; line-height: 1.3; }
     .card-platform { font-size: .8rem; color: var(--text-sub); margin-top: 2px; }
     .card-actions { display: flex; gap: 6px; }
     .icon-btn {
-      background: none;
-      border: none;
-      cursor: pointer;
-      padding: 4px;
-      border-radius: 6px;
+      background: none; border: none; cursor: pointer;
+      padding: 4px; border-radius: 6px;
       color: var(--text-sub);
       transition: background .15s, color .15s;
     }
     .icon-btn:hover { background: var(--bg); color: var(--text); }
-
-    .card-price {
-      display: flex;
-      align-items: baseline;
-      gap: 6px;
-    }
+    .card-price { display: flex; align-items: baseline; gap: 6px; }
     .card-price .amount { font-size: 1.5rem; font-weight: 800; color: var(--primary); }
     .card-price .cycle { font-size: .82rem; color: var(--text-sub); }
-
-    .card-meta {
-      display: flex;
-      flex-direction: column;
-      gap: 6px;
-    }
+    .card-meta { display: flex; flex-direction: column; gap: 6px; }
     .meta-row {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      font-size: .83rem;
-      color: var(--text-sub);
+      display: flex; align-items: center; gap: 6px;
+      font-size: .83rem; color: var(--text-sub);
     }
     .meta-row svg { flex-shrink: 0; }
-
-    .tag {
-      display: inline-block;
-      padding: 3px 10px;
-      border-radius: 50px;
-      font-size: .75rem;
-      font-weight: 600;
-      background: var(--primary-light);
-      color: var(--primary);
-    }
-
-    .badge {
-      padding: 3px 10px;
-      border-radius: 50px;
-      font-size: .75rem;
-      font-weight: 600;
-    }
+    .badge { padding: 3px 10px; border-radius: 50px; font-size: .75rem; font-weight: 600; }
     .badge-green { background: #e8f5e9; color: var(--success); }
     .badge-warn { background: #fff3e0; color: var(--warn); }
     .badge-red { background: #ffebee; color: var(--danger); }
     .badge-grey { background: #f5f5f5; color: #999; }
-
     .card-note {
-      font-size: .82rem;
-      color: var(--text-sub);
-      background: var(--bg);
-      border-radius: 8px;
-      padding: 8px 10px;
-      line-height: 1.5;
+      font-size: .82rem; color: var(--text-sub);
+      background: var(--bg); border-radius: 8px;
+      padding: 8px 10px; line-height: 1.5;
     }
 
     /* ── Empty State ── */
@@ -249,97 +321,59 @@
       position: fixed; inset: 0;
       background: rgba(0,0,0,.45);
       backdrop-filter: blur(3px);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      z-index: 1000;
-      padding: 16px;
-      opacity: 0;
-      pointer-events: none;
+      display: flex; align-items: center; justify-content: center;
+      z-index: 1000; padding: 16px;
+      opacity: 0; pointer-events: none;
       transition: opacity .2s;
     }
     .overlay.open { opacity: 1; pointer-events: all; }
     .modal {
       background: var(--surface);
-      border-radius: 18px;
-      padding: 28px;
-      width: 100%;
-      max-width: 480px;
-      max-height: 90vh;
-      overflow-y: auto;
+      border-radius: 18px; padding: 28px;
+      width: 100%; max-width: 480px;
+      max-height: 90vh; overflow-y: auto;
       transform: translateY(20px);
       transition: transform .2s;
     }
     .overlay.open .modal { transform: translateY(0); }
     .modal h2 { font-size: 1.2rem; margin-bottom: 20px; }
     .form-group { margin-bottom: 16px; }
-    .form-group label {
-      display: block;
-      font-size: .85rem;
-      font-weight: 600;
-      margin-bottom: 6px;
-      color: var(--text-sub);
-    }
+    .form-group label { display: block; font-size: .85rem; font-weight: 600; margin-bottom: 6px; color: var(--text-sub); }
     .form-group input,
     .form-group select,
     .form-group textarea {
-      width: 100%;
-      padding: 10px 14px;
+      width: 100%; padding: 10px 14px;
       border: 1px solid var(--border);
-      border-radius: 10px;
-      font-size: .93rem;
-      font-family: inherit;
-      outline: none;
-      transition: border-color .2s;
-      background: var(--bg);
+      border-radius: 10px; font-size: .93rem;
+      font-family: inherit; outline: none;
+      transition: border-color .2s; background: var(--bg);
     }
     .form-group input:focus,
     .form-group select:focus,
     .form-group textarea:focus { border-color: var(--primary); background: #fff; }
     .form-group textarea { resize: vertical; min-height: 72px; }
     .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-    .emoji-picker {
-      display: flex;
-      gap: 8px;
-      flex-wrap: wrap;
-      margin-top: 6px;
-    }
+    .emoji-picker { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 6px; }
     .emoji-opt {
-      font-size: 1.4rem;
-      cursor: pointer;
-      padding: 4px 6px;
-      border-radius: 8px;
-      border: 2px solid transparent;
-      transition: border-color .15s;
+      font-size: 1.4rem; cursor: pointer;
+      padding: 4px 6px; border-radius: 8px;
+      border: 2px solid transparent; transition: border-color .15s;
     }
     .emoji-opt.selected { border-color: var(--primary); background: var(--primary-light); }
-    .color-picker {
-      display: flex;
-      gap: 8px;
-      flex-wrap: wrap;
-      margin-top: 6px;
-    }
+    .color-picker { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 6px; }
     .color-opt {
-      width: 26px; height: 26px;
-      border-radius: 50%;
-      cursor: pointer;
-      border: 3px solid transparent;
+      width: 26px; height: 26px; border-radius: 50%;
+      cursor: pointer; border: 3px solid transparent;
       transition: transform .15s, border-color .15s;
     }
     .color-opt.selected { border-color: var(--text); transform: scale(1.2); }
     .modal-actions {
-      display: flex;
-      gap: 10px;
-      justify-content: flex-end;
-      margin-top: 20px;
+      display: flex; gap: 10px;
+      justify-content: flex-end; margin-top: 20px;
     }
     .btn {
-      padding: 10px 22px;
-      border-radius: 50px;
-      border: none;
-      cursor: pointer;
-      font-size: .93rem;
-      font-weight: 600;
+      padding: 10px 22px; border-radius: 50px; border: none;
+      cursor: pointer; font-size: .93rem; font-weight: 600;
       transition: opacity .15s;
     }
     .btn:hover { opacity: .85; }
@@ -379,61 +413,110 @@
     @media (max-width: 600px) {
       header, .stats-bar, .toolbar, .grid { padding-left: 16px; padding-right: 16px; }
       .form-row { grid-template-columns: 1fr; }
+      .header-right { gap: 6px; }
     }
   </style>
 </head>
 <body>
 
-<!-- Header -->
-<header>
-  <div>
-    <h1>📋 我的订阅 <span id="hdr-count"></span></h1>
-  </div>
-  <button class="btn-add" onclick="openModal()">
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-    添加订阅
-  </button>
-</header>
+<!-- ── Auth Screen ── -->
+<div id="auth-screen">
+  <div class="auth-card">
+    <div class="logo">📋</div>
+    <h1>我的订阅管理</h1>
+    <p class="subtitle">登录后，你的数据将自动同步到云端</p>
 
-<!-- Stats -->
-<div class="stats-bar">
-  <div class="stat-card">
-    <div class="label">订阅总数</div>
-    <div class="value" id="stat-total">0</div>
-    <div class="sub">个活跃订阅</div>
-  </div>
-  <div class="stat-card">
-    <div class="label">月支出</div>
-    <div class="value" id="stat-monthly">¥0</div>
-    <div class="sub">折算月费用</div>
-  </div>
-  <div class="stat-card">
-    <div class="label">年支出</div>
-    <div class="value" id="stat-yearly">¥0</div>
-    <div class="sub">折算年费用</div>
-  </div>
-  <div class="stat-card">
-    <div class="label">即将到期</div>
-    <div class="value" id="stat-expiring" style="color: var(--warn)">0</div>
-    <div class="sub">30天内到期</div>
+    <!-- GitHub 登录 -->
+    <button class="btn-auth-github" onclick="loginWithGitHub()">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0 0 24 12c0-6.63-5.37-12-12-12z"/></svg>
+      使用 GitHub 登录
+    </button>
+
+    <div class="auth-divider">或使用邮箱</div>
+
+    <!-- 邮箱登录/注册 -->
+    <div class="auth-form">
+      <div class="form-group">
+        <label>邮箱</label>
+        <input type="email" id="auth-email" placeholder="your@email.com" />
+      </div>
+      <div class="form-group">
+        <label>密码</label>
+        <input type="password" id="auth-password" placeholder="至少6位" onkeydown="if(event.key==='Enter')handleEmailAuth()" />
+      </div>
+      <button class="btn-auth-email" onclick="handleEmailAuth()" id="btn-email-auth">登录</button>
+      <div class="auth-msg" id="auth-msg"></div>
+      <div class="auth-toggle">
+        <span id="auth-toggle-text">还没有账号？</span>
+        <a onclick="toggleAuthMode()">立即注册</a>
+      </div>
+    </div>
   </div>
 </div>
 
-<!-- Toolbar -->
-<div class="toolbar">
-  <div class="search-wrap">
-    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-    <input type="text" id="search-input" placeholder="搜索订阅名称 / 平台…" oninput="renderCards()">
-  </div>
-  <button class="filter-btn active" data-filter="all" onclick="setFilter(this)">全部</button>
-  <button class="filter-btn" data-filter="active" onclick="setFilter(this)">有效</button>
-  <button class="filter-btn" data-filter="expiring" onclick="setFilter(this)">即将到期</button>
-  <button class="filter-btn" data-filter="expired" onclick="setFilter(this)">已过期</button>
-  <button class="filter-btn" data-filter="inactive" onclick="setFilter(this)">已取消</button>
-</div>
+<!-- ── App Screen ── -->
+<div id="app-screen">
+  <!-- Loading Bar -->
+  <div class="loading-bar" id="loading-bar"></div>
 
-<!-- Cards -->
-<div class="grid" id="grid"></div>
+  <!-- Header -->
+  <header>
+    <div>
+      <h1>📋 我的订阅 <span id="hdr-count"></span></h1>
+    </div>
+    <div class="header-right">
+      <div class="user-badge">
+        <div class="user-avatar" id="user-avatar">👤</div>
+        <span id="user-name">用户</span>
+      </div>
+      <button class="btn-add" onclick="openModal()">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        添加订阅
+      </button>
+      <button class="btn-logout" onclick="handleLogout()">退出</button>
+    </div>
+  </header>
+
+  <!-- Stats -->
+  <div class="stats-bar">
+    <div class="stat-card">
+      <div class="label">订阅总数</div>
+      <div class="value" id="stat-total">0</div>
+      <div class="sub">个活跃订阅</div>
+    </div>
+    <div class="stat-card">
+      <div class="label">月支出</div>
+      <div class="value" id="stat-monthly">¥0</div>
+      <div class="sub">折算月费用</div>
+    </div>
+    <div class="stat-card">
+      <div class="label">年支出</div>
+      <div class="value" id="stat-yearly">¥0</div>
+      <div class="sub">折算年费用</div>
+    </div>
+    <div class="stat-card">
+      <div class="label">即将到期</div>
+      <div class="value" id="stat-expiring" style="color: var(--warn)">0</div>
+      <div class="sub">30天内到期</div>
+    </div>
+  </div>
+
+  <!-- Toolbar -->
+  <div class="toolbar">
+    <div class="search-wrap">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      <input type="text" id="search-input" placeholder="搜索订阅名称 / 平台…" oninput="renderCards()">
+    </div>
+    <button class="filter-btn active" data-filter="all" onclick="setFilter(this)">全部</button>
+    <button class="filter-btn" data-filter="active" onclick="setFilter(this)">有效</button>
+    <button class="filter-btn" data-filter="expiring" onclick="setFilter(this)">即将到期</button>
+    <button class="filter-btn" data-filter="expired" onclick="setFilter(this)">已过期</button>
+    <button class="filter-btn" data-filter="inactive" onclick="setFilter(this)">已取消</button>
+  </div>
+
+  <!-- Cards -->
+  <div class="grid" id="grid"></div>
+</div>
 
 <!-- ── Add/Edit Modal ── -->
 <div class="overlay" id="modal-overlay" onclick="overlayClick(event)">
@@ -521,7 +604,7 @@
 
     <div class="modal-actions">
       <button class="btn btn-ghost" onclick="closeModal()">取消</button>
-      <button class="btn btn-primary" onclick="saveSubscription()">保存</button>
+      <button class="btn btn-primary" id="btn-save" onclick="saveSubscription()">保存</button>
     </div>
   </div>
 </div>
@@ -542,38 +625,257 @@
 <div id="toast"></div>
 
 <script>
-// ── Data ──────────────────────────────────────────────
-const STORAGE_KEY = 'my_subscriptions_v1';
-let subscriptions = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
+// ── Supabase 配置 ──────────────────────────────────────
+const SUPABASE_URL = 'https://qknojxdhdjqjdoqjdnyu.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_4Tp8MFF3euuboY3AOGwUrQ_y9ZPidmD';
+const { createClient } = supabase;
+const sb = createClient(SUPABASE_URL, SUPABASE_KEY);
+
+// ── State ──────────────────────────────────────────────
+let subscriptions = [];
+let currentUser = null;
 let editingId = null;
 let deleteId = null;
 let currentFilter = 'all';
+let isLoginMode = true;
 
 const EMOJIS = ['📋','📚','🎓','📰','💡','🎯','🎵','🎬','💻','🌐','⭐','🏆','🔑','🗞️','📊','🎮','🤖','🌟','💎','🔥'];
 const COLORS = ['#5c6bc0','#26a69a','#ef5350','#ff7043','#ab47bc','#42a5f5','#66bb6a','#ffca28','#8d6e63','#78909c'];
-
 let selectedEmoji = EMOJIS[0];
 let selectedColor = COLORS[0];
 
-// ── Init ──────────────────────────────────────────────
-function init() {
+// ── Auth ───────────────────────────────────────────────
+async function loginWithGitHub() {
+  const { error } = await sb.auth.signInWithOAuth({
+    provider: 'github',
+    options: { redirectTo: window.location.href }
+  });
+  if (error) showToast('登录失败：' + error.message);
+}
+
+function toggleAuthMode() {
+  isLoginMode = !isLoginMode;
+  document.getElementById('btn-email-auth').textContent = isLoginMode ? '登录' : '注册';
+  document.getElementById('auth-toggle-text').textContent = isLoginMode ? '还没有账号？' : '已有账号？';
+  document.querySelector('.auth-toggle a').textContent = isLoginMode ? '立即注册' : '去登录';
+  document.getElementById('auth-msg').textContent = '';
+}
+
+async function handleEmailAuth() {
+  const email = document.getElementById('auth-email').value.trim();
+  const password = document.getElementById('auth-password').value;
+  const msg = document.getElementById('auth-msg');
+  msg.textContent = '';
+  msg.className = 'auth-msg';
+
+  if (!email || !password) { msg.textContent = '请填写邮箱和密码'; return; }
+  if (password.length < 6) { msg.textContent = '密码至少6位'; return; }
+
+  const btn = document.getElementById('btn-email-auth');
+  btn.textContent = '处理中…';
+  btn.disabled = true;
+
+  let result;
+  if (isLoginMode) {
+    result = await sb.auth.signInWithPassword({ email, password });
+  } else {
+    result = await sb.auth.signUp({ email, password });
+  }
+
+  btn.textContent = isLoginMode ? '登录' : '注册';
+  btn.disabled = false;
+
+  if (result.error) {
+    msg.textContent = result.error.message;
+  } else if (!isLoginMode && !result.data?.session) {
+    msg.textContent = '注册成功！请检查邮箱完成验证后登录。';
+    msg.className = 'auth-msg success';
+  }
+  // 登录成功由 onAuthStateChange 处理
+}
+
+async function handleLogout() {
+  await sb.auth.signOut();
+}
+
+// ── Auth State ─────────────────────────────────────────
+sb.auth.onAuthStateChange(async (event, session) => {
+  if (session?.user) {
+    currentUser = session.user;
+    showApp();
+    await loadSubscriptions();
+  } else {
+    currentUser = null;
+    showAuth();
+  }
+});
+
+// 初始检查
+(async () => {
+  const { data: { session } } = await sb.auth.getSession();
+  if (session?.user) {
+    currentUser = session.user;
+    showApp();
+    await loadSubscriptions();
+  }
+})();
+
+function showApp() {
+  document.getElementById('auth-screen').style.display = 'none';
+  document.getElementById('app-screen').style.display = 'block';
   buildEmojiPicker();
   buildColorPicker();
-  renderCards();
-  updateStats();
-  // Pre-fill today's date
+
+  // 显示用户信息
+  const u = currentUser;
+  const name = u.user_metadata?.user_name || u.user_metadata?.name || u.email?.split('@')[0] || '用户';
+  document.getElementById('user-name').textContent = name;
+  const avatarEl = document.getElementById('user-avatar');
+  const avatarUrl = u.user_metadata?.avatar_url;
+  if (avatarUrl) {
+    avatarEl.innerHTML = `<img src="${avatarUrl}" alt="${name}" />`;
+  } else {
+    avatarEl.textContent = name[0].toUpperCase();
+  }
+
   document.getElementById('f-start').value = today();
 }
 
+function showAuth() {
+  document.getElementById('auth-screen').style.display = 'flex';
+  document.getElementById('app-screen').style.display = 'none';
+  subscriptions = [];
+}
+
+// ── Data (Supabase) ────────────────────────────────────
+function setLoading(on) {
+  document.getElementById('loading-bar').classList.toggle('show', on);
+}
+
+async function loadSubscriptions() {
+  setLoading(true);
+  const { data, error } = await sb
+    .from('subscriptions')
+    .select('*')
+    .eq('user_id', currentUser.id)
+    .order('created_at', { ascending: false });
+  setLoading(false);
+
+  if (error) { showToast('加载失败：' + error.message); return; }
+  subscriptions = (data || []).map(dbToLocal);
+  renderCards();
+  updateStats();
+}
+
+// 数据库字段 → 本地字段映射
+function dbToLocal(row) {
+  return {
+    id: row.id,
+    name: row.name,
+    platform: row.platform || '',
+    platformCustom: '', // 存在 notes 里
+    price: row.price?.toString() || '0',
+    cycle: row.billing_cycle || 'monthly',
+    start: row.start_date || '',
+    expire: row.expire_date || '',
+    status: row.status || 'active',
+    note: row.notes || '',
+    emoji: row.icon || '📦',
+    color: row.color || '#5c6bc0',
+    createdAt: row.created_at,
+  };
+}
+
+// 本地字段 → 数据库字段映射
+function localToDB(data) {
+  return {
+    user_id: currentUser.id,
+    name: data.name,
+    platform: data.platformCustom || data.platform || '',
+    icon: data.emoji,
+    color: data.color,
+    price: parseFloat(data.price) || 0,
+    billing_cycle: data.cycle,
+    start_date: data.start || null,
+    expire_date: data.expire || null,
+    status: data.status,
+    notes: data.note,
+    updated_at: new Date().toISOString(),
+  };
+}
+
+async function dbInsert(data) {
+  setLoading(true);
+  const { data: row, error } = await sb
+    .from('subscriptions')
+    .insert(localToDB(data))
+    .select()
+    .single();
+  setLoading(false);
+  if (error) throw error;
+  return dbToLocal(row);
+}
+
+async function dbUpdate(id, data) {
+  setLoading(true);
+  const { error } = await sb
+    .from('subscriptions')
+    .update(localToDB(data))
+    .eq('id', id)
+    .eq('user_id', currentUser.id);
+  setLoading(false);
+  if (error) throw error;
+}
+
+async function dbDelete(id) {
+  setLoading(true);
+  const { error } = await sb
+    .from('subscriptions')
+    .delete()
+    .eq('id', id)
+    .eq('user_id', currentUser.id);
+  setLoading(false);
+  if (error) throw error;
+}
+
+// ── Helpers ────────────────────────────────────────────
 function today() {
   return new Date().toISOString().slice(0, 10);
 }
 
-function save() {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(subscriptions));
+function daysUntil(dateStr) {
+  if (!dateStr) return Infinity;
+  const diff = new Date(dateStr) - new Date(today());
+  return Math.ceil(diff / (1000 * 60 * 60 * 24));
 }
 
-// ── Stats ─────────────────────────────────────────────
+function getExpireStatus(s) {
+  if (s.status !== 'active') return 'inactive';
+  if (!s.expire) return 'active';
+  const days = daysUntil(s.expire);
+  if (days < 0) return 'expired';
+  if (days <= 30) return 'expiring';
+  return 'active';
+}
+
+function statusBadge(s) {
+  const st = getExpireStatus(s);
+  if (st === 'inactive') return '<span class="badge badge-grey">已取消</span>';
+  if (st === 'expired') return '<span class="badge badge-red">已过期</span>';
+  if (st === 'expiring') return `<span class="badge badge-warn">还剩 ${daysUntil(s.expire)} 天</span>`;
+  if (s.expire) return `<span class="badge badge-green">剩 ${daysUntil(s.expire)} 天</span>`;
+  return '<span class="badge badge-green">订阅中</span>';
+}
+
+function cycleName(c) {
+  return { monthly:'/ 月', quarterly:'/ 季', yearly:'/ 年', once:'一次性' }[c] || '';
+}
+
+function esc(str) {
+  return (str || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// ── Stats ──────────────────────────────────────────────
 function updateStats() {
   const active = subscriptions.filter(s => s.status === 'active');
   document.getElementById('stat-total').textContent = active.length;
@@ -590,49 +892,13 @@ function updateStats() {
   document.getElementById('stat-yearly').textContent = '¥' + (monthly * 12).toFixed(0);
 
   const expiring = active.filter(s => {
-    if (!s.expire) return false;
     const days = daysUntil(s.expire);
     return days >= 0 && days <= 30;
   }).length;
   document.getElementById('stat-expiring').textContent = expiring;
 }
 
-function daysUntil(dateStr) {
-  if (!dateStr) return Infinity;
-  const diff = new Date(dateStr) - new Date(today());
-  return Math.ceil(diff / (1000 * 60 * 60 * 24));
-}
-
-// ── Status helpers ─────────────────────────────────────
-function getExpireStatus(s) {
-  if (s.status !== 'active') return 'inactive';
-  if (!s.expire) return 'active';
-  const days = daysUntil(s.expire);
-  if (days < 0) return 'expired';
-  if (days <= 30) return 'expiring';
-  return 'active';
-}
-
-function statusBadge(s) {
-  const st = getExpireStatus(s);
-  if (st === 'inactive') return '<span class="badge badge-grey">已取消</span>';
-  if (st === 'expired') return '<span class="badge badge-red">已过期</span>';
-  if (st === 'expiring') {
-    const d = daysUntil(s.expire);
-    return `<span class="badge badge-warn">还剩 ${d} 天</span>`;
-  }
-  if (s.expire) {
-    const d = daysUntil(s.expire);
-    return `<span class="badge badge-green">剩 ${d} 天</span>`;
-  }
-  return '<span class="badge badge-green">订阅中</span>';
-}
-
-function cycleName(c) {
-  return { monthly:'/ 月', quarterly:'/ 季', yearly:'/ 年', once:'一次性' }[c] || '';
-}
-
-// ── Filter ────────────────────────────────────────────
+// ── Filter & Render ────────────────────────────────────
 function setFilter(el) {
   document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
   el.classList.add('active');
@@ -650,9 +916,8 @@ function matchFilter(s) {
   return true;
 }
 
-// ── Render ────────────────────────────────────────────
 function renderCards() {
-  const q = document.getElementById('search-input').value.trim().toLowerCase();
+  const q = (document.getElementById('search-input')?.value || '').trim().toLowerCase();
   const grid = document.getElementById('grid');
 
   let list = subscriptions.filter(s => {
@@ -677,7 +942,7 @@ function renderCards() {
 function cardHTML(s) {
   const color = s.color || COLORS[0];
   const emoji = s.emoji || EMOJIS[0];
-  const platform = s.platformCustom || s.platform || '';
+  const platform = s.platform || '';
   return `
   <div class="card" id="card-${s.id}">
     <div class="card-stripe" style="background:${color}"></div>
@@ -713,22 +978,17 @@ function cardHTML(s) {
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
         开始：${s.start}
       </div>` : ''}
-      <div class="meta-row">
-        ${statusBadge(s)}
-      </div>
+      <div class="meta-row">${statusBadge(s)}</div>
     </div>
 
     ${s.note ? `<div class="card-note">${esc(s.note)}</div>` : ''}
   </div>`;
 }
 
-function esc(str) {
-  return (str || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
-}
-
-// ── Emoji / Color Picker ──────────────────────────────
+// ── Emoji / Color Picker ───────────────────────────────
 function buildEmojiPicker() {
   const el = document.getElementById('emoji-picker');
+  if (!el) return;
   el.innerHTML = EMOJIS.map(e =>
     `<span class="emoji-opt${e===selectedEmoji?' selected':''}" onclick="pickEmoji(this,'${e}')">${e}</span>`
   ).join('');
@@ -742,6 +1002,7 @@ function pickEmoji(el, emoji) {
 
 function buildColorPicker() {
   const el = document.getElementById('color-picker');
+  if (!el) return;
   el.innerHTML = COLORS.map(c =>
     `<div class="color-opt${c===selectedColor?' selected':''}" style="background:${c}" onclick="pickColor(this,'${c}')"></div>`
   ).join('');
@@ -753,8 +1014,8 @@ function pickColor(el, color) {
   el.classList.add('selected');
 }
 
-// ── Modal ─────────────────────────────────────────────
-function openModal(prefill) {
+// ── Modal ──────────────────────────────────────────────
+function openModal() {
   editingId = null;
   document.getElementById('modal-title').textContent = '添加订阅';
   document.getElementById('f-name').value = '';
@@ -766,10 +1027,8 @@ function openModal(prefill) {
   document.getElementById('f-expire').value = '';
   document.getElementById('f-status').value = 'active';
   document.getElementById('f-note').value = '';
-  selectedEmoji = EMOJIS[0];
-  selectedColor = COLORS[0];
-  buildEmojiPicker();
-  buildColorPicker();
+  selectedEmoji = EMOJIS[0]; selectedColor = COLORS[0];
+  buildEmojiPicker(); buildColorPicker();
   document.getElementById('modal-overlay').classList.add('open');
 }
 
@@ -789,8 +1048,7 @@ function openEdit(id) {
   document.getElementById('f-note').value = s.note || '';
   selectedEmoji = s.emoji || EMOJIS[0];
   selectedColor = s.color || COLORS[0];
-  buildEmojiPicker();
-  buildColorPicker();
+  buildEmojiPicker(); buildColorPicker();
   document.getElementById('modal-overlay').classList.add('open');
 }
 
@@ -802,18 +1060,15 @@ function overlayClick(e) {
   if (e.target === document.getElementById('modal-overlay')) closeModal();
 }
 
-function saveSubscription() {
+async function saveSubscription() {
   const name = document.getElementById('f-name').value.trim();
-  const platform = document.getElementById('f-platform').value;
-  const platformCustom = document.getElementById('f-platform-custom').value.trim();
-  const price = document.getElementById('f-price').value;
   if (!name) { showToast('请填写订阅名称'); return; }
 
   const data = {
     name,
-    platform,
-    platformCustom,
-    price,
+    platform: document.getElementById('f-platform-custom').value.trim() || document.getElementById('f-platform').value,
+    platformCustom: document.getElementById('f-platform-custom').value.trim(),
+    price: document.getElementById('f-price').value,
     cycle: document.getElementById('f-cycle').value,
     start: document.getElementById('f-start').value,
     expire: document.getElementById('f-expire').value,
@@ -823,34 +1078,46 @@ function saveSubscription() {
     color: selectedColor,
   };
 
-  if (editingId) {
-    const idx = subscriptions.findIndex(s => s.id === editingId);
-    if (idx > -1) subscriptions[idx] = { ...subscriptions[idx], ...data };
-    showToast('✅ 已更新');
-  } else {
-    data.id = Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
-    data.createdAt = new Date().toISOString();
-    subscriptions.unshift(data);
-    showToast('✅ 已添加');
-  }
+  const btn = document.getElementById('btn-save');
+  btn.textContent = '保存中…'; btn.disabled = true;
 
-  save();
-  closeModal();
-  renderCards();
-  updateStats();
+  try {
+    if (editingId) {
+      await dbUpdate(editingId, data);
+      const idx = subscriptions.findIndex(s => s.id === editingId);
+      if (idx > -1) subscriptions[idx] = { ...subscriptions[idx], ...data };
+      showToast('✅ 已更新');
+    } else {
+      const newRow = await dbInsert(data);
+      subscriptions.unshift(newRow);
+      showToast('✅ 已添加');
+    }
+    closeModal();
+    renderCards();
+    updateStats();
+  } catch (err) {
+    showToast('保存失败：' + err.message);
+  } finally {
+    btn.textContent = '保存'; btn.disabled = false;
+  }
 }
 
-// ── Delete ────────────────────────────────────────────
+// ── Delete ─────────────────────────────────────────────
 function confirmDelete(id) {
   deleteId = id;
   document.getElementById('confirm-overlay').classList.add('open');
-  document.getElementById('confirm-ok').onclick = () => {
-    subscriptions = subscriptions.filter(s => s.id !== deleteId);
-    save();
-    renderCards();
-    updateStats();
-    closeConfirm();
-    showToast('🗑️ 已删除');
+  document.getElementById('confirm-ok').onclick = async () => {
+    try {
+      await dbDelete(deleteId);
+      subscriptions = subscriptions.filter(s => s.id !== deleteId);
+      renderCards();
+      updateStats();
+      closeConfirm();
+      showToast('🗑️ 已删除');
+    } catch (err) {
+      showToast('删除失败：' + err.message);
+      closeConfirm();
+    }
   };
 }
 
@@ -859,38 +1126,15 @@ function closeConfirm() {
   deleteId = null;
 }
 
-// ── Toast ─────────────────────────────────────────────
+// ── Toast ──────────────────────────────────────────────
 let toastTimer;
 function showToast(msg) {
   const el = document.getElementById('toast');
   el.textContent = msg;
   el.classList.add('show');
   clearTimeout(toastTimer);
-  toastTimer = setTimeout(() => el.classList.remove('show'), 2200);
+  toastTimer = setTimeout(() => el.classList.remove('show'), 2500);
 }
-
-// ── Demo Data ─────────────────────────────────────────
-function addDemoData() {
-  if (subscriptions.length > 0) return;
-  const demos = [
-    { name:'科技周报', platform:'小报童', price:'39', cycle:'yearly', start:'2025-12-01', expire:'2026-11-30', status:'active', emoji:'🗞️', color:'#5c6bc0', note:'科技前沿资讯，每周更新。' },
-    { name:'商业内参 Pro', platform:'知识星球', price:'299', cycle:'yearly', start:'2026-01-10', expire:'2027-01-09', status:'active', emoji:'💡', color:'#26a69a', note:'行业大咖分享，附每月直播。' },
-    { name:'ChatGPT Plus', platform:'ChatGPT Plus', price:'140', cycle:'monthly', start:'2026-03-01', expire:'2026-04-01', status:'active', emoji:'🤖', color:'#42a5f5', note:'GPT-4o，用于日常工作辅助。' },
-    { name:'微信读书无限卡', platform:'微信读书', price:'19', cycle:'monthly', start:'2026-02-15', expire:'2026-04-15', status:'active', emoji:'📚', color:'#66bb6a', note:'无限读书，书单持续更新。' },
-  ];
-  demos.forEach(d => {
-    d.id = Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
-    d.createdAt = new Date().toISOString();
-    d.platformCustom = '';
-  });
-  subscriptions = demos;
-  save();
-  renderCards();
-  updateStats();
-}
-
-init();
-addDemoData();
 </script>
 </body>
 </html>
