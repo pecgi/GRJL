@@ -235,6 +235,15 @@ function getToken() {
 
 function isLoggedIn() { return !!getToken(); }
 
+function getUserId() {
+  try {
+    const token = getToken();
+    if (!token) return null;
+    const payload = JSON.parse(atob(token.split('.')[1]));
+    return payload.sub || null;
+  } catch(e) { return null; }
+}
+
 // ──────────────────────────────────────────────────────
 //  本地缓存
 // ──────────────────────────────────────────────────────
@@ -390,7 +399,7 @@ async function markToday() {
         'Content-Type': 'application/json',
         'Prefer': 'resolution=merge-duplicates,return=minimal',
       },
-      body: JSON.stringify({ date: todayStr, title: '', body: '', saved_at: new Date().toISOString() }),
+      body: JSON.stringify({ user_id: getUserId(), date: todayStr, title: '', body: '', saved_at: new Date().toISOString() }),
     });
     if (res.ok || res.status === 201 || res.status === 204) {
       // 更新本地缓存

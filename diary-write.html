@@ -257,6 +257,16 @@ function getToken() {
 
 function isLoggedIn() { return !!getToken(); }
 
+// 从 JWT access_token 中解码 user_id（sub 字段）
+function getUserId() {
+  try {
+    const token = getToken();
+    if (!token) return null;
+    const payload = JSON.parse(atob(token.split('.')[1]));
+    return payload.sub || null;
+  } catch(e) { return null; }
+}
+
 // Supabase REST upsert 封装（POST + on_conflict=user_id,date）
 async function sbUpsert(data) {
   const token = getToken();
@@ -475,6 +485,7 @@ async function handleSave() {
   try {
     // 写入 Supabase（upsert 方式：存在则更新，不存在则插入）
     const res = await sbUpsert({
+      user_id: getUserId(),
       date: currentDate,
       title: title,
       body: body,
