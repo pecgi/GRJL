@@ -726,13 +726,18 @@ function localToDB(data) {
 
 async function dbInsert(data) {
   setLoading(true);
+  const payload = localToDB(data);
+  console.log('dbInsert payload:', payload);
   const { data: row, error } = await sb
     .from('subscriptions')
-    .insert(localToDB(data))
+    .insert(payload)
     .select()
     .single();
   setLoading(false);
-  if (error) throw error;
+  if (error) {
+    console.error('dbInsert error:', error);
+    throw error;
+  }
   return dbToLocal(row);
 }
 
@@ -1016,7 +1021,8 @@ async function saveSubscription() {
     renderCards();
     updateStats();
   } catch (err) {
-    showToast('保存失败：' + err.message);
+    console.error('保存失败详情:', err);
+    showToast('保存失败：' + (err.message || err.details || JSON.stringify(err)));
   } finally {
     btn.textContent = '保存'; btn.disabled = false;
   }
