@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>我的工具箱</title>
+  <title>生活数字记录</title>
   <style>
     :root {
       --bg: #fafafa;
@@ -11,7 +11,7 @@
       --text: #1a1a1a;
       --text-sub: #888;
       --border: #ebebeb;
-      --accent: #1a1a1a;
+      --accent: #5c6bc0;
     }
 
     * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -47,6 +47,10 @@
       letter-spacing: -1px;
       line-height: 1.1;
       color: var(--text);
+    }
+
+    header h1 span {
+      color: var(--accent);
     }
 
     header p {
@@ -157,6 +161,12 @@
       width: fit-content;
     }
 
+    .card-tag.active {
+      border-color: #c5cae9;
+      color: var(--accent);
+      background: #f3f4fd;
+    }
+
     /* Coming Soon card */
     .tool-card.coming-soon {
       opacity: .45;
@@ -184,63 +194,53 @@
 <body>
 
 <header>
-  <div class="site-label">My Toolbox</div>
-  <h1>我的<br>个人工具箱</h1>
-  <p>记录生活、整理信息的小工具集合。<br>简单好用，数据都在本地。</p>
+  <div class="site-label">Life · Digital · Records</div>
+  <h1>生活<span>数字</span>记录</h1>
+  <p>把日常里值得留存的东西，好好收起来。<br>订阅、提示词、笔记，慢慢建。</p>
 </header>
 
 <div class="divider"></div>
 
 <div class="section">
-  <div class="section-title">工具列表 · Tools</div>
+  <div class="section-title">模块 · Modules</div>
 
   <div class="tool-grid">
 
     <!-- 订阅管理 -->
     <a class="tool-card" href="./subscriptions.html">
       <div class="card-top">
-        <div class="card-icon">📋</div>
+        <div class="card-icon">📦</div>
         <div class="card-arrow">↗</div>
       </div>
       <div class="card-name">订阅管理</div>
-      <div class="card-desc">记录小报童、知识星球等订阅内容，统计月费年费，追踪到期时间。</div>
-      <div class="card-tag">记录 · 统计</div>
+      <div class="card-desc">记录小报童、知识星球、软件订阅等，统计月费年费，追踪到期时间。</div>
+      <div class="card-tag active">已上线</div>
     </a>
 
-    <!-- 占位工具 2 -->
+    <!-- Prompt 卡片 -->
     <div class="tool-card coming-soon">
       <div class="card-top">
-        <div class="card-icon">📖</div>
+        <div class="card-icon">🤖</div>
       </div>
-      <div class="card-name">读书记录</div>
-      <div class="card-desc">记录读过的书，写下笔记与感悟。</div>
+      <div class="card-name">Prompt 卡片</div>
+      <div class="card-desc">收集整理常用的 AI 提示词，分类管理，随用随取。</div>
       <div class="card-tag">即将上线</div>
     </div>
 
-    <!-- 占位工具 3 -->
+    <!-- 笔记摘抄本 -->
     <div class="tool-card coming-soon">
       <div class="card-top">
-        <div class="card-icon">✅</div>
+        <div class="card-icon">📝</div>
       </div>
-      <div class="card-name">习惯打卡</div>
-      <div class="card-desc">追踪每日习惯，建立连续打卡记录。</div>
-      <div class="card-tag">即将上线</div>
-    </div>
-
-    <!-- 占位工具 4 -->
-    <div class="tool-card coming-soon">
-      <div class="card-top">
-        <div class="card-icon">💰</div>
-      </div>
-      <div class="card-name">消费记录</div>
-      <div class="card-desc">简单记录日常支出，掌握消费习惯。</div>
+      <div class="card-name">笔记摘抄</div>
+      <div class="card-desc">记录读书、文章里的好句子，附上出处和感想，慢慢积累。</div>
       <div class="card-tag">即将上线</div>
     </div>
 
   </div>
 </div>
 
-<footer>pecgi · 个人工具箱</footer>
+<footer>pecgi · 生活数字记录</footer>
 
 </body>
 </html>

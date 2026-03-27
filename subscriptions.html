@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>我的订阅管理</title>
+  <title>生活数字记录</title>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
     :root {
@@ -422,9 +422,10 @@
 <!-- ── Auth Screen ── -->
 <div id="auth-screen">
   <div class="auth-card">
-    <div class="logo">📋</div>
-    <h1>我的订阅管理</h1>
-    <p class="subtitle">登录后，你的数据将自动同步到云端</p>
+    <div class="logo">🗂️</div>
+    <h1>生活数字记录</h1>
+    <p class="subtitle">订阅管理 · 登录后数据自动同步到云端</p>
+
 
     <!-- GitHub 登录 -->
     <button class="btn-auth-github" onclick="loginWithGitHub()">
@@ -462,7 +463,10 @@
   <!-- Header -->
   <header>
     <div>
-      <h1>📋 我的订阅 <span id="hdr-count"></span></h1>
+      <div style="font-size:.75rem;color:#aaa;margin-bottom:4px;letter-spacing:.5px;">
+        <a href="./index.html" style="color:#aaa;text-decoration:none;" onmouseover="this.style.color='#5c6bc0'" onmouseout="this.style.color='#aaa'">← 生活数字记录</a>
+      </div>
+      <h1>📦 我的订阅 <span id="hdr-count"></span></h1>
     </div>
     <div class="header-right">
       <div class="user-badge">
