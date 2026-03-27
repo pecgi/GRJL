@@ -351,7 +351,7 @@ function renderDetail(entries, year) {
       </div>`;
     }
 
-    return `<div class="month-card mc-${mColor}">
+    return `<div class="month-card mc-${mColor}" onclick="window.location.href='./diary-month.html?year=${year}&month=${m}'">
       <div class="m-name">${m}月</div>
       <div class="m-pct">${pctLabel(mPct)}</div>
       <div class="m-count">${mCount}/${mCutoff}</div>
