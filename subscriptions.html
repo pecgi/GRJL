@@ -728,17 +728,30 @@ async function dbInsert(data) {
   setLoading(true);
   const payload = localToDB(data);
   console.log('dbInsert payload:', payload);
-  const { data: row, error } = await sb
-    .from('subscriptions')
-    .insert(payload)
-    .select()
-    .single();
-  setLoading(false);
-  if (error) {
-    console.error('dbInsert error:', error);
-    throw error;
+  try {
+    const { data: rows, error } = await sb
+      .from('subscriptions')
+      .insert(payload)
+      .select();
+    
+    if (error) {
+      console.error('dbInsert error:', error);
+      throw error;
+    }
+    
+    console.log('dbInsert success, returned rows:', rows);
+    // 取第一条返回的数据
+    const row = rows && rows.length > 0 ? rows[0] : null;
+    if (!row) {
+      throw new Error('插入成功但未返回数据');
+    }
+    return dbToLocal(row);
+  } catch (err) {
+    console.error('dbInsert catch:', err);
+    throw err;
+  } finally {
+    setLoading(false);
   }
-  return dbToLocal(row);
 }
 
 async function dbUpdate(id, data) {
