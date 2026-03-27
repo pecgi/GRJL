@@ -152,47 +152,6 @@
     }
     .btn-today:hover { background: #f3f4f6; border-color: #d1d5db; color: var(--text); }
 
-    .modal-mask {
-      display: none; position: fixed; inset: 0;
-      background: rgba(0,0,0,.35); backdrop-filter: blur(4px);
-      z-index: 100; align-items: center; justify-content: center; padding: 20px;
-    }
-    .modal-mask.open { display: flex; }
-    .modal {
-      background: #ffffff;
-      border: 1px solid var(--card-border);
-      border-radius: 20px;
-      padding: 28px 28px 24px;
-      width: 100%; max-width: 420px;
-      box-shadow: 0 20px 60px rgba(0,0,0,.12);
-    }
-    .modal h3 { font-size: 1.1rem; font-weight: 700; margin-bottom: 20px; }
-    .modal label { display: block; font-size: .82rem; color: var(--text-sub); margin-bottom: 6px; }
-    .modal input[type=date], .modal textarea {
-      width: 100%; padding: 10px 14px;
-      background: #f9fafb;
-      border: 1.5px solid #e5e7eb;
-      border-radius: 10px; color: var(--text); font-size: .92rem;
-      outline: none; transition: border-color .15s;
-      margin-bottom: 16px;
-    }
-    .modal input[type=date]:focus, .modal textarea:focus { border-color: var(--primary); }
-    .modal textarea { resize: vertical; min-height: 80px; font-family: inherit; }
-    .modal-btns { display: flex; gap: 10px; justify-content: flex-end; margin-top: 4px; }
-    .btn-cancel {
-      background: #f3f4f6; color: var(--text-sub);
-      border: 1px solid var(--card-border); border-radius: 10px;
-      padding: 9px 18px; font-size: .88rem; cursor: pointer;
-    }
-    .btn-cancel:hover { background: #e5e7eb; }
-    .btn-save {
-      background: var(--primary); color: #fff;
-      border: none; border-radius: 10px;
-      padding: 9px 20px; font-size: .88rem; font-weight: 600;
-      cursor: pointer; transition: background .15s;
-    }
-    .btn-save:hover { background: #4f46e5; }
-
     /* ── Toast ── */
     .toast {
       position: fixed; bottom: 28px; left: 50%; transform: translateX(-50%) translateY(20px);
@@ -429,15 +388,6 @@ function markToday() {
   activeYear = parseInt(todayStr.slice(0,4));
   render();
 }
-    return;
-  }
-  data.entries[todayStr] = { note: '', ts: Date.now() };
-  saveData(data);
-  showToast('今天打卡成功 ✓');
-  activeYear = today.getFullYear();
-  render();
-}
-
 
 function showToast(msg) {
   const t = document.getElementById('toast');
