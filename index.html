@@ -382,6 +382,12 @@ function showAuth() {
   document.getElementById('auth-screen').style.display = 'flex';
   document.getElementById('app-screen').style.display = 'none';
 }
+
+function handleLogout() {
+  const key = `sb-${SUPABASE_URL.split('//')[1].split('.')[0]}-auth-token`;
+  localStorage.removeItem(key);
+  showAuth();
+}
 </script>
 </body>
 </html>
