@@ -380,9 +380,9 @@ async function markToday() {
     showToast('今天已记录过了 ✓');
     return;
   }
-  // 写入云端一条空打卡
+  // 写入云端一条空打卡（upsert，带 on_conflict）
   try {
-    const res = await fetch(`${SUPABASE_URL}/rest/v1/diary_entries`, {
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/diary_entries?on_conflict=user_id,date`, {
       method: 'POST',
       headers: {
         'apikey': SUPABASE_ANON,

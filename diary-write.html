@@ -257,19 +257,22 @@ function getToken() {
 
 function isLoggedIn() { return !!getToken(); }
 
-// Supabase REST 请求封装
-async function sbRequest(method, path, body) {
+// Supabase REST upsert 封装（POST + on_conflict=user_id,date）
+async function sbUpsert(data) {
   const token = getToken();
-  const res = await fetch(`${SUPABASE_URL}/rest/v1/${path}`, {
-    method,
-    headers: {
-      'apikey': SUPABASE_ANON,
-      'Authorization': `Bearer ${token}`,
-      'Content-Type': 'application/json',
-      'Prefer': method === 'POST' ? 'resolution=merge-duplicates,return=minimal' : 'return=minimal',
-    },
-    body: body ? JSON.stringify(body) : undefined,
-  });
+  const res = await fetch(
+    `${SUPABASE_URL}/rest/v1/diary_entries?on_conflict=user_id,date`,
+    {
+      method: 'POST',
+      headers: {
+        'apikey': SUPABASE_ANON,
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json',
+        'Prefer': 'resolution=merge-duplicates,return=minimal',
+      },
+      body: JSON.stringify(data),
+    }
+  );
   return res;
 }
 
@@ -471,7 +474,7 @@ async function handleSave() {
 
   try {
     // 写入 Supabase（upsert 方式：存在则更新，不存在则插入）
-    const res = await sbRequest('POST', 'diary_entries', {
+    const res = await sbUpsert({
       date: currentDate,
       title: title,
       body: body,
