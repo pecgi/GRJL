@@ -728,6 +728,9 @@ async function dbInsert(data) {
   setLoading(true);
   const payload = localToDB(data);
   console.log('dbInsert payload:', payload);
+  // 打印当前 session token（调试用）
+  const { data: { session: dbgSession } } = await sb.auth.getSession();
+  console.log('current access_token:', dbgSession?.access_token ? dbgSession.access_token.slice(0,30)+'...' : '❌ 无 token，未登录！');
   
   // 10秒超时保护
   const timeout = new Promise((_, reject) => 
