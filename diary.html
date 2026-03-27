@@ -9,16 +9,17 @@
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
     :root {
-      --bg: #0f1117;
-      --card-bg: #1a1d27;
-      --card-border: rgba(255,255,255,.07);
-      --text: #e8e8f0;
-      --text-sub: #7a7d8e;
-      --green: #22c55e;
-      --yellow: #eab308;
-      --orange: #f97316;
-      --gray: #4b5563;
-      --primary: #6366f1;
+      --bg: #fafafa;
+      --card-bg: #ffffff;
+      --card-border: #ebebeb;
+      --text: #1a1a1a;
+      --text-sub: #888;
+      --green: #16a34a;
+      --yellow: #ca8a04;
+      --orange: #ea580c;
+      --gray: #9ca3af;
+      --primary: #5c6bc0;
+      --primary-dark: #3949ab;
       --radius: 14px;
     }
 
@@ -36,6 +37,7 @@
       justify-content: space-between;
       padding: 18px 28px;
       border-bottom: 1px solid var(--card-border);
+      background: #ffffff;
     }
     .top-bar-left { display: flex; align-items: center; gap: 16px; }
     .back-link {
@@ -71,14 +73,14 @@
       transition: border-color .2s, transform .15s;
       position: relative;
     }
-    .year-card:hover { transform: translateY(-2px); border-color: rgba(255,255,255,.18); }
+    .year-card:hover { transform: translateY(-2px); border-color: #c7c9d4; }
     .year-card.active {
       border-color: var(--primary);
       box-shadow: 0 0 0 1px var(--primary), 0 4px 20px rgba(99,102,241,.25);
     }
     .year-card .yr { font-size: .88rem; font-weight: 600; color: var(--text-sub); margin-bottom: 5px; }
     .year-card .pct { font-size: 1.35rem; font-weight: 800; line-height: 1.1; margin-bottom: 8px; }
-    .year-card .bar-wrap { height: 4px; background: rgba(255,255,255,.08); border-radius: 2px; margin-bottom: 6px; }
+    .year-card .bar-wrap { height: 4px; background: #e5e7eb; border-radius: 2px; margin-bottom: 6px; }
     .year-card .bar-fill { height: 100%; border-radius: 2px; transition: width .5s ease; }
     .year-card .count { font-size: .72rem; color: var(--text-sub); }
 
@@ -119,15 +121,15 @@
     .month-card .m-count { font-size: .72rem; opacity: .75; }
 
     /* 月卡颜色主题 */
-    .month-card.mc-green { background: #14532d; color: #bbf7d0; }
-    .month-card.mc-green .m-pct { color: #4ade80; }
-    .month-card.mc-yellow { background: #422006; color: #fef3c7; }
-    .month-card.mc-yellow .m-pct { color: #fbbf24; }
-    .month-card.mc-orange { background: #431407; color: #fed7aa; }
-    .month-card.mc-orange .m-pct { color: #fb923c; }
-    .month-card.mc-gray { background: #1e2130; color: var(--text-sub); }
-    .month-card.mc-gray .m-pct { color: var(--text-sub); }
-    .month-card.mc-future { background: #1a1d27; color: #3d4154; opacity: .5; cursor: default; }
+    .month-card.mc-green { background: #dcfce7; color: #14532d; }
+    .month-card.mc-green .m-pct { color: #16a34a; }
+    .month-card.mc-yellow { background: #fef9c3; color: #713f12; }
+    .month-card.mc-yellow .m-pct { color: #ca8a04; }
+    .month-card.mc-orange { background: #ffedd5; color: #7c2d12; }
+    .month-card.mc-orange .m-pct { color: #ea580c; }
+    .month-card.mc-gray { background: #f3f4f6; color: #6b7280; }
+    .month-card.mc-gray .m-pct { color: #9ca3af; }
+    .month-card.mc-future { background: #f9fafb; color: #d1d5db; opacity: .6; cursor: default; }
 
     /* ── 操作区 ── */
     .action-bar {
@@ -143,33 +145,33 @@
     }
     .btn-add-entry:hover { background: #4f46e5; transform: translateY(-1px); }
     .btn-today {
-      background: rgba(255,255,255,.07); color: var(--text-sub);
-      border: 1px solid var(--card-border); border-radius: 10px;
+      background: #ffffff; color: var(--text-sub);
+      border: 1.5px solid var(--card-border); border-radius: 10px;
       padding: 9px 14px; font-size: .85rem;
-      cursor: pointer; transition: background .15s;
+      cursor: pointer; transition: background .15s, border-color .15s;
     }
-    .btn-today:hover { background: rgba(255,255,255,.12); color: var(--text); }
+    .btn-today:hover { background: #f3f4f6; border-color: #d1d5db; color: var(--text); }
 
-    /* ── 模态框 ── */
     .modal-mask {
       display: none; position: fixed; inset: 0;
-      background: rgba(0,0,0,.7); backdrop-filter: blur(4px);
+      background: rgba(0,0,0,.35); backdrop-filter: blur(4px);
       z-index: 100; align-items: center; justify-content: center; padding: 20px;
     }
     .modal-mask.open { display: flex; }
     .modal {
-      background: var(--card-bg);
+      background: #ffffff;
       border: 1px solid var(--card-border);
       border-radius: 20px;
       padding: 28px 28px 24px;
       width: 100%; max-width: 420px;
+      box-shadow: 0 20px 60px rgba(0,0,0,.12);
     }
     .modal h3 { font-size: 1.1rem; font-weight: 700; margin-bottom: 20px; }
     .modal label { display: block; font-size: .82rem; color: var(--text-sub); margin-bottom: 6px; }
     .modal input[type=date], .modal textarea {
       width: 100%; padding: 10px 14px;
-      background: rgba(255,255,255,.06);
-      border: 1.5px solid rgba(255,255,255,.12);
+      background: #f9fafb;
+      border: 1.5px solid #e5e7eb;
       border-radius: 10px; color: var(--text); font-size: .92rem;
       outline: none; transition: border-color .15s;
       margin-bottom: 16px;
@@ -178,10 +180,11 @@
     .modal textarea { resize: vertical; min-height: 80px; font-family: inherit; }
     .modal-btns { display: flex; gap: 10px; justify-content: flex-end; margin-top: 4px; }
     .btn-cancel {
-      background: rgba(255,255,255,.07); color: var(--text-sub);
+      background: #f3f4f6; color: var(--text-sub);
       border: 1px solid var(--card-border); border-radius: 10px;
       padding: 9px 18px; font-size: .88rem; cursor: pointer;
     }
+    .btn-cancel:hover { background: #e5e7eb; }
     .btn-save {
       background: var(--primary); color: #fff;
       border: none; border-radius: 10px;
@@ -193,8 +196,8 @@
     /* ── Toast ── */
     .toast {
       position: fixed; bottom: 28px; left: 50%; transform: translateX(-50%) translateY(20px);
-      background: #1e2130; border: 1px solid var(--card-border);
-      color: var(--text); padding: 10px 20px; border-radius: 100px;
+      background: #1a1a1a; border: none;
+      color: #fff; padding: 10px 20px; border-radius: 100px;
       font-size: .88rem; opacity: 0; pointer-events: none;
       transition: opacity .2s, transform .2s; z-index: 200;
     }
