@@ -106,7 +106,6 @@
       color: var(--text-sub);
       margin-left: 6px;
     }
-    /* 隐藏的原生 input[type=date] 叠在 date-display 上 */
     .date-input-hidden {
       position: absolute;
       inset: 0;
@@ -133,14 +132,12 @@
     }
     .title-input::placeholder { color: var(--text-placeholder); }
 
-    /* 分割线 */
     .divider {
       height: 1px;
       background: var(--border);
       margin-bottom: 24px;
     }
 
-    /* 正文输入 */
     .body-input {
       width: 100%;
       min-height: 420px;
@@ -155,7 +152,6 @@
     }
     .body-input::placeholder { color: var(--text-placeholder); }
 
-    /* 字数统计 */
     .word-count {
       text-align: right;
       font-size: .78rem;
@@ -174,7 +170,17 @@
     }
     .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
 
-    /* ── 保存成功遮罩 ── */
+    /* 保存中遮罩 */
+    .saving-mask {
+      display: none;
+      position: fixed; inset: 0;
+      background: rgba(255,255,255,.6);
+      z-index: 300;
+      align-items: center; justify-content: center;
+      font-size: .95rem; color: var(--primary); font-weight: 600;
+    }
+    .saving-mask.show { display: flex; }
+
     @media (max-width: 600px) {
       .top-bar { padding: 12px 16px; }
       .editor-wrap { padding: 32px 20px 60px; }
@@ -198,8 +204,6 @@
 
 <!-- 写作区 -->
 <div class="editor-wrap">
-
-  <!-- 日期 -->
   <div class="date-row">
     <div class="date-display" id="date-display">
       <span id="date-text"></span>
@@ -208,7 +212,6 @@
     </div>
   </div>
 
-  <!-- 标题 -->
   <textarea
     class="title-input"
     id="title-input"
@@ -220,7 +223,6 @@
 
   <div class="divider"></div>
 
-  <!-- 正文 -->
   <textarea
     class="body-input"
     id="body-input"
@@ -229,25 +231,63 @@
   ></textarea>
 
   <div class="word-count" id="word-count">0 字</div>
-
 </div>
 
 <div class="toast" id="toast"></div>
+<div class="saving-mask" id="saving-mask">保存中…</div>
 
 <script>
 // ────────────────────────────────────────────
-//  数据层
+//  Supabase 配置（原生 fetch 方案）
+// ────────────────────────────────────────────
+const SUPABASE_URL  = 'https://qknojxdhdjqjdoqjdnyu.supabase.co';
+const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFrbm9qeGRoZGpxamRvcWpkbnl1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDMwMDQ4NjAsImV4cCI6MjA1ODU4MDg2MH0.6fMBDFmSIOQqAXOQZFl5OxQ7kvwsTKrRHr0KfUuajvI';
+
+function getToken() {
+  try {
+    const ref = SUPABASE_URL.split('//')[1].split('.')[0];
+    const key = `sb-${ref}-auth-token`;
+    const raw = localStorage.getItem(key);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw);
+    if (parsed.expires_at && parsed.expires_at * 1000 < Date.now()) return null;
+    return parsed.access_token || null;
+  } catch(e) { return null; }
+}
+
+function isLoggedIn() { return !!getToken(); }
+
+// Supabase REST 请求封装
+async function sbRequest(method, path, body) {
+  const token = getToken();
+  const res = await fetch(`${SUPABASE_URL}/rest/v1/${path}`, {
+    method,
+    headers: {
+      'apikey': SUPABASE_ANON,
+      'Authorization': `Bearer ${token}`,
+      'Content-Type': 'application/json',
+      'Prefer': method === 'POST' ? 'resolution=merge-duplicates,return=minimal' : 'return=minimal',
+    },
+    body: body ? JSON.stringify(body) : undefined,
+  });
+  return res;
+}
+
+// ────────────────────────────────────────────
+//  本地缓存（离线备用）
 // ────────────────────────────────────────────
 const STORAGE_KEY = 'diary_entries_v1';
 
-function loadData() {
+function loadLocal() {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
     return raw ? JSON.parse(raw) : { entries: {} };
   } catch(e) { return { entries: {} }; }
 }
 
-function saveData(data) {
+function saveLocal(date, entry) {
+  const data = loadLocal();
+  data.entries[date] = entry;
   localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
 }
 
@@ -257,8 +297,7 @@ function saveData(data) {
 const WEEKDAYS = ['周日','周一','周二','周三','周四','周五','周六'];
 
 function todayStr() {
-  const d = new Date();
-  return fmtDate(d);
+  return fmtDate(new Date());
 }
 
 function fmtDate(d) {
@@ -289,23 +328,59 @@ function friendlyDate(str) {
 // ────────────────────────────────────────────
 let currentDate = '';
 
-// 从 URL 参数读取日期（可从日记页传入）
-function initPage() {
+async function initPage() {
+  if (!isLoggedIn()) {
+    window.location.replace('./index.html');
+    return;
+  }
+
   const params = new URLSearchParams(location.search);
   currentDate = params.get('date') || todayStr();
 
-  // 如果该日期已有记录，载入
-  const data = loadData();
-  const entry = data.entries[currentDate] || {};
+  // 先从本地缓存载入，再尝试从云端获取最新
+  const local = loadLocal();
+  let entry = local.entries[currentDate] || {};
 
   document.getElementById('title-input').value = entry.title || '';
-  document.getElementById('body-input').value = entry.body || '';
-
+  document.getElementById('body-input').value  = entry.body  || '';
   autoResize(document.getElementById('title-input'));
   updateDateDisplay();
   updateWordCount();
 
-  // 聚焦正文（如果有内容则移到末尾）
+  // 异步从云端拉取最新内容
+  try {
+    const res = await fetch(
+      `${SUPABASE_URL}/rest/v1/diary_entries?date=eq.${currentDate}&select=title,body,saved_at`,
+      {
+        headers: {
+          'apikey': SUPABASE_ANON,
+          'Authorization': `Bearer ${getToken()}`,
+        }
+      }
+    );
+    if (res.ok) {
+      const rows = await res.json();
+      if (rows && rows.length > 0) {
+        const cloud = rows[0];
+        entry = { title: cloud.title || '', body: cloud.body || '', savedAt: cloud.saved_at };
+        // 用云端内容更新本地缓存
+        saveLocal(currentDate, entry);
+        // 更新编辑器（仅当用户还没开始编辑时）
+        const titleEl = document.getElementById('title-input');
+        const bodyEl  = document.getElementById('body-input');
+        if (!titleEl.value && !bodyEl.value) {
+          titleEl.value = entry.title || '';
+          bodyEl.value  = entry.body  || '';
+          autoResize(titleEl);
+          updateWordCount();
+        }
+      }
+    }
+  } catch(e) {
+    // 网络异常，忽略，用本地缓存
+  }
+
+  // 聚焦正文
   const bodyEl = document.getElementById('body-input');
   bodyEl.focus();
   const len = bodyEl.value.length;
@@ -319,19 +394,43 @@ function updateDateDisplay() {
   document.getElementById('date-picker').value = currentDate;
 }
 
-function onDateChange() {
+async function onDateChange() {
   const picker = document.getElementById('date-picker');
   if (!picker.value) return;
   currentDate = picker.value;
 
-  // 切换日期时，载入已有内容
-  const data = loadData();
-  const entry = data.entries[currentDate] || {};
+  // 先显示本地缓存
+  const local = loadLocal();
+  let entry = local.entries[currentDate] || {};
   document.getElementById('title-input').value = entry.title || '';
-  document.getElementById('body-input').value = entry.body || '';
+  document.getElementById('body-input').value  = entry.body  || '';
   autoResize(document.getElementById('title-input'));
   updateDateDisplay();
   updateWordCount();
+
+  // 再从云端刷新
+  try {
+    const res = await fetch(
+      `${SUPABASE_URL}/rest/v1/diary_entries?date=eq.${currentDate}&select=title,body,saved_at`,
+      {
+        headers: {
+          'apikey': SUPABASE_ANON,
+          'Authorization': `Bearer ${getToken()}`,
+        }
+      }
+    );
+    if (res.ok) {
+      const rows = await res.json();
+      if (rows && rows.length > 0) {
+        const cloud = rows[0];
+        document.getElementById('title-input').value = cloud.title || '';
+        document.getElementById('body-input').value  = cloud.body  || '';
+        autoResize(document.getElementById('title-input'));
+        updateWordCount();
+        saveLocal(currentDate, { title: cloud.title || '', body: cloud.body || '', savedAt: cloud.saved_at });
+      }
+    }
+  } catch(e) {}
 }
 
 // ────────────────────────────────────────────
@@ -339,52 +438,71 @@ function onDateChange() {
 // ────────────────────────────────────────────
 function updateWordCount() {
   const title = document.getElementById('title-input').value;
-  const body = document.getElementById('body-input').value;
+  const body  = document.getElementById('body-input').value;
   const total = (title + body).replace(/\s/g, '').length;
   document.getElementById('word-count').textContent = total > 0 ? `${total} 字` : '0 字';
 }
 
-// ────────────────────────────────────────────
-//  自动高度（标题）
-// ────────────────────────────────────────────
 function autoResize(el) {
   el.style.height = 'auto';
   el.style.height = el.scrollHeight + 'px';
 }
 
 // ────────────────────────────────────────────
-//  保存
+//  保存（云端 + 本地）
 // ────────────────────────────────────────────
-function handleSave() {
+async function handleSave() {
   const title = document.getElementById('title-input').value.trim();
-  const body = document.getElementById('body-input').value.trim();
+  const body  = document.getElementById('body-input').value.trim();
 
   if (!body && !title) {
     showToast('请先写点什么 ✏️');
     return;
   }
 
-  const data = loadData();
-  data.entries[currentDate] = {
-    title,
-    body,
-    savedAt: new Date().toISOString()
-  };
-  saveData(data);
+  const btn = document.getElementById('btn-save');
+  btn.disabled = true;
+  document.getElementById('saving-mask').classList.add('show');
 
-  showToast('已保存 ✓');
+  const entry = { title, body, savedAt: new Date().toISOString() };
 
-  // 短暂延迟后返回日记列表
-  setTimeout(() => {
-    window.location.href = './diary.html';
-  }, 800);
+  // 先存本地缓存（离线也能用）
+  saveLocal(currentDate, entry);
+
+  try {
+    // 写入 Supabase（upsert 方式：存在则更新，不存在则插入）
+    const res = await sbRequest('POST', 'diary_entries', {
+      date: currentDate,
+      title: title,
+      body: body,
+      saved_at: entry.savedAt,
+    });
+
+    document.getElementById('saving-mask').classList.remove('show');
+    btn.disabled = false;
+
+    if (res.ok || res.status === 201 || res.status === 204) {
+      showToast('已保存 ✓');
+      setTimeout(() => { window.location.href = './diary.html'; }, 800);
+    } else {
+      const errText = await res.text();
+      console.error('Save error:', res.status, errText);
+      showToast('云端保存失败，已存本地');
+      setTimeout(() => { window.location.href = './diary.html'; }, 1200);
+    }
+  } catch(e) {
+    document.getElementById('saving-mask').classList.remove('show');
+    btn.disabled = false;
+    showToast('网络异常，已存本地');
+    setTimeout(() => { window.location.href = './diary.html'; }, 1200);
+  }
 }
 
 // ────────────────────────────────────────────
 //  放弃 / 返回
 // ────────────────────────────────────────────
 function handleDiscard() {
-  const body = document.getElementById('body-input').value.trim();
+  const body  = document.getElementById('body-input').value.trim();
   const title = document.getElementById('title-input').value.trim();
   if (body || title) {
     if (!confirm('放弃这篇日记？内容不会被保存。')) return;
@@ -393,14 +511,11 @@ function handleDiscard() {
 }
 
 function handleBack() {
-  const body = document.getElementById('body-input').value.trim();
+  const body  = document.getElementById('body-input').value.trim();
   const title = document.getElementById('title-input').value.trim();
-
-  // 检查是否有已保存的内容
-  const data = loadData();
-  const entry = data.entries[currentDate] || {};
+  const local = loadLocal();
+  const entry = local.entries[currentDate] || {};
   const unchanged = (title === (entry.title||'')) && (body === (entry.body||''));
-
   if (!unchanged && (body || title)) {
     if (!confirm('有未保存的内容，确定离开？')) return;
   }
@@ -416,7 +531,7 @@ function showToast(msg) {
   el.textContent = msg;
   el.classList.add('show');
   clearTimeout(toastTimer);
-  toastTimer = setTimeout(() => el.classList.remove('show'), 2000);
+  toastTimer = setTimeout(() => el.classList.remove('show'), 2500);
 }
 
 // ────────────────────────────────────────────

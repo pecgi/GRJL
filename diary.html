@@ -217,21 +217,38 @@
 
 <script>
 // ──────────────────────────────────────────────────────
-//  数据层：使用 localStorage 存储
-//  数据结构：{ entries: { "2026-03-27": { note: "" }, ... } }
+//  Supabase 配置
+// ──────────────────────────────────────────────────────
+const SUPABASE_URL  = 'https://qknojxdhdjqjdoqjdnyu.supabase.co';
+const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFrbm9qeGRoZGpxamRvcWpkbnl1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDMwMDQ4NjAsImV4cCI6MjA1ODU4MDg2MH0.6fMBDFmSIOQqAXOQZFl5OxQ7kvwsTKrRHr0KfUuajvI';
+
+function getToken() {
+  try {
+    const ref = SUPABASE_URL.split('//')[1].split('.')[0];
+    const raw = localStorage.getItem(`sb-${ref}-auth-token`);
+    if (!raw) return null;
+    const p = JSON.parse(raw);
+    if (p.expires_at && p.expires_at * 1000 < Date.now()) return null;
+    return p.access_token || null;
+  } catch(e) { return null; }
+}
+
+function isLoggedIn() { return !!getToken(); }
+
+// ──────────────────────────────────────────────────────
+//  本地缓存
 // ──────────────────────────────────────────────────────
 const STORAGE_KEY = 'diary_entries_v1';
 
-function loadData() {
+function loadLocal() {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
     return raw ? JSON.parse(raw) : { entries: {} };
   } catch(e) { return { entries: {} }; }
 }
 
-function saveData(data) {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
-  render();
+function saveLocal(entries) {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify({ entries }));
 }
 
 // ──────────────────────────────────────────────────────
@@ -255,7 +272,6 @@ function daysInMonth(year, month) {
   return new Date(year, month, 0).getDate();
 }
 
-// 今天是今年第几天
 function dayOfYear(dateStr) {
   const d = new Date(dateStr);
   const start = new Date(d.getFullYear(), 0, 0);
@@ -278,30 +294,22 @@ function pctLabel(p) {
 // ──────────────────────────────────────────────────────
 let activeYear = today.getFullYear();
 
-function render() {
-  const data = loadData();
-  const entries = data.entries;
-
-  // 计算有记录的年份范围
+function render(entries) {
   const entryYears = new Set(Object.keys(entries).map(d => parseInt(d.slice(0,4))));
   entryYears.add(today.getFullYear());
-  const years = Array.from(entryYears).sort((a,b) => b-a); // 降序
+  const years = Array.from(entryYears).sort((a,b) => b-a);
 
-  // 更新标题
   document.getElementById('total-years-label').textContent = `（${years.length}年）`;
   document.getElementById('update-time').textContent = `更新于 ${today.getFullYear()}/${today.getMonth()+1}/${today.getDate()}`;
 
-  // 年份网格
   const grid = document.getElementById('year-grid');
   grid.innerHTML = '';
   years.forEach(year => {
-    const total = daysInYear(year);
-    const cutoff = year === today.getFullYear()
-      ? dayOfYear(todayStr)
-      : total;
-    const count = Object.keys(entries).filter(d => d.startsWith(year+'')).length;
-    const pct = cutoff > 0 ? (count / cutoff) * 100 : 0;
-    const color = pctColor(pct);
+    const total  = daysInYear(year);
+    const cutoff = year === today.getFullYear() ? dayOfYear(todayStr) : total;
+    const count  = Object.keys(entries).filter(d => d.startsWith(year+'')).length;
+    const pct    = cutoff > 0 ? (count / cutoff) * 100 : 0;
+    const color  = pctColor(pct);
 
     const card = document.createElement('div');
     card.className = `year-card${activeYear === year ? ' active' : ''}`;
@@ -311,36 +319,28 @@ function render() {
       <div class="bar-wrap"><div class="bar-fill c-${color}" style="width:${Math.min(pct,100)}%"></div></div>
       <div class="count">${count}/${cutoff}</div>
     `;
-    card.onclick = () => { activeYear = year; render(); };
+    card.onclick = () => { activeYear = year; render(entries); };
     grid.appendChild(card);
   });
 
-  // 年份详情
   renderDetail(entries, activeYear);
 }
 
 function renderDetail(entries, year) {
   const section = document.getElementById('detail-section');
-  const total = daysInYear(year);
   const isCurrentYear = year === today.getFullYear();
-  const cutoff = isCurrentYear ? dayOfYear(todayStr) : total;
-  const count = Object.keys(entries).filter(d => d.startsWith(year+'')).length;
-  const pct = cutoff > 0 ? (count / cutoff) * 100 : 0;
+  const cutoff = isCurrentYear ? dayOfYear(todayStr) : daysInYear(year);
+  const count  = Object.keys(entries).filter(d => d.startsWith(year+'')).length;
+  const pct    = cutoff > 0 ? (count / cutoff) * 100 : 0;
 
-  const months = Array.from({length:12}, (_,i) => i+1);
-  const monthCards = months.map(m => {
-    const days = daysInMonth(year, m);
+  const monthCards = Array.from({length:12}, (_,i) => i+1).map(m => {
+    const days     = daysInMonth(year, m);
     const monthStr = `${year}-${String(m).padStart(2,'0')}`;
-    const mCount = Object.keys(entries).filter(d => d.startsWith(monthStr)).length;
-
-    // 判断是否是未来月份
+    const mCount   = Object.keys(entries).filter(d => d.startsWith(monthStr)).length;
     const isFuture = isCurrentYear && m > today.getMonth()+1;
-    // 当月截止到今天
-    const mCutoff = (isCurrentYear && m === today.getMonth()+1)
-      ? today.getDate()
-      : (isFuture ? 0 : days);
-
-    const mPct = mCutoff > 0 ? (mCount / mCutoff) * 100 : 0;
+    const mCutoff  = (isCurrentYear && m === today.getMonth()+1)
+      ? today.getDate() : (isFuture ? 0 : days);
+    const mPct   = mCutoff > 0 ? (mCount / mCutoff) * 100 : 0;
     const mColor = pctColor(mPct);
 
     if (isFuture) {
@@ -350,7 +350,6 @@ function renderDetail(entries, year) {
         <div class="m-count">${days}天</div>
       </div>`;
     }
-
     return `<div class="month-card mc-${mColor}" onclick="window.location.href='./diary-month.html?year=${year}&month=${m}'">
       <div class="m-name">${m}月</div>
       <div class="m-pct">${pctLabel(mPct)}</div>
@@ -371,22 +370,41 @@ function renderDetail(entries, year) {
 //  操作
 // ──────────────────────────────────────────────────────
 function goWrite(date) {
-  const d = date || todayStr;
-  window.location.href = `./diary-write.html?date=${d}`;
+  window.location.href = `./diary-write.html?date=${date || todayStr}`;
 }
 
-function markToday() {
-  const data = loadData();
-  if (data.entries[todayStr]) {
+async function markToday() {
+  // 检查本地缓存
+  const local = loadLocal();
+  if (local.entries[todayStr]) {
     showToast('今天已记录过了 ✓');
     return;
   }
-  // 快速打卡：不跳页面，直接存一条空记录
-  data.entries[todayStr] = { title: '', body: '', savedAt: new Date().toISOString() };
-  saveData(data);
-  showToast('今天已打卡 ✓');
-  activeYear = parseInt(todayStr.slice(0,4));
-  render();
+  // 写入云端一条空打卡
+  try {
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/diary_entries`, {
+      method: 'POST',
+      headers: {
+        'apikey': SUPABASE_ANON,
+        'Authorization': `Bearer ${getToken()}`,
+        'Content-Type': 'application/json',
+        'Prefer': 'resolution=merge-duplicates,return=minimal',
+      },
+      body: JSON.stringify({ date: todayStr, title: '', body: '', saved_at: new Date().toISOString() }),
+    });
+    if (res.ok || res.status === 201 || res.status === 204) {
+      // 更新本地缓存
+      local.entries[todayStr] = { title: '', body: '', savedAt: new Date().toISOString() };
+      saveLocal(local.entries);
+      showToast('今天已打卡 ✓');
+      activeYear = parseInt(todayStr.slice(0,4));
+      render(local.entries);
+    } else {
+      showToast('打卡失败，请重试');
+    }
+  } catch(e) {
+    showToast('网络异常，请重试');
+  }
 }
 
 function showToast(msg) {
@@ -397,25 +415,44 @@ function showToast(msg) {
 }
 
 // ──────────────────────────────────────────────────────
-//  初始化：检查登录
+//  初始化：从云端拉取所有日记条目
 // ──────────────────────────────────────────────────────
-const SUPABASE_URL = 'https://qknojxdhdjqjdoqjdnyu.supabase.co';
-function isLoggedIn() {
-  const key = `sb-${SUPABASE_URL.split('//')[1].split('.')[0]}-auth-token`;
+async function init() {
+  if (!isLoggedIn()) {
+    window.location.replace('./index.html');
+    return;
+  }
+
+  // 先用本地缓存快速渲染
+  const local = loadLocal();
+  render(local.entries);
+
+  // 再从云端拉取全量数据
   try {
-    const raw = localStorage.getItem(key);
-    if (!raw) return false;
-    const parsed = JSON.parse(raw);
-    if (parsed.expires_at && parsed.expires_at * 1000 < Date.now()) return false;
-    return !!parsed.access_token;
-  } catch(e) { return false; }
+    const res = await fetch(
+      `${SUPABASE_URL}/rest/v1/diary_entries?select=date,title,body,saved_at&order=date.desc`,
+      {
+        headers: {
+          'apikey': SUPABASE_ANON,
+          'Authorization': `Bearer ${getToken()}`,
+        }
+      }
+    );
+    if (res.ok) {
+      const rows = await res.json();
+      const entries = {};
+      rows.forEach(r => {
+        entries[r.date] = { title: r.title || '', body: r.body || '', savedAt: r.saved_at };
+      });
+      saveLocal(entries);
+      render(entries);
+    }
+  } catch(e) {
+    // 网络异常，已用本地缓存渲染
+  }
 }
 
-if (!isLoggedIn()) {
-  window.location.replace('./index.html');
-} else {
-  render();
-}
+init();
 </script>
 </body>
 </html>

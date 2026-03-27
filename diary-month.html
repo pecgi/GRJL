@@ -336,14 +336,62 @@
 
 <script>
 // ──────────────────────────────────────────────
-//  数据
+//  Supabase 配置
+// ──────────────────────────────────────────────
+const SUPABASE_URL  = 'https://qknojxdhdjqjdoqjdnyu.supabase.co';
+const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFrbm9qeGRoZGpxamRvcWpkbnl1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDMwMDQ4NjAsImV4cCI6MjA1ODU4MDg2MH0.6fMBDFmSIOQqAXOQZFl5OxQ7kvwsTKrRHr0KfUuajvI';
+
+function getToken() {
+  try {
+    const ref = SUPABASE_URL.split('//')[1].split('.')[0];
+    const raw = localStorage.getItem(`sb-${ref}-auth-token`);
+    if (!raw) return null;
+    const p = JSON.parse(raw);
+    if (p.expires_at && p.expires_at * 1000 < Date.now()) return null;
+    return p.access_token || null;
+  } catch(e) { return null; }
+}
+
+// ──────────────────────────────────────────────
+//  本地缓存
 // ──────────────────────────────────────────────
 const STORAGE_KEY = 'diary_entries_v1';
-function loadData() {
+function loadLocal() {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
     return raw ? JSON.parse(raw) : { entries: {} };
   } catch(e) { return { entries: {} }; }
+}
+
+// 从云端拉取指定年月的日记数据，返回 entries 对象
+async function fetchMonthEntries(year, month) {
+  const token = getToken();
+  if (!token) return null;
+  const from = `${year}-${String(month).padStart(2,'0')}-01`;
+  const to   = `${year}-${String(month).padStart(2,'0')}-31`;
+  try {
+    const res = await fetch(
+      `${SUPABASE_URL}/rest/v1/diary_entries?date=gte.${from}&date=lte.${to}&select=date,title,body,saved_at`,
+      {
+        headers: {
+          'apikey': SUPABASE_ANON,
+          'Authorization': `Bearer ${token}`,
+        }
+      }
+    );
+    if (!res.ok) return null;
+    const rows = await res.json();
+    const result = {};
+    rows.forEach(r => {
+      result[r.date] = { title: r.title || '', body: r.body || '', savedAt: r.saved_at };
+    });
+    return result;
+  } catch(e) { return null; }
+}
+
+// 从本地缓存读（旧接口兼容）
+function loadData() {
+  return loadLocal();
 }
 
 // ──────────────────────────────────────────────
@@ -380,9 +428,7 @@ curMonth = paramM  || todayObj.getMonth() + 1;
 // ──────────────────────────────────────────────
 //  渲染月历
 // ──────────────────────────────────────────────
-function render() {
-  const data = loadData();
-  const entries = data.entries;
+function render(entries) {
   const total = daysInMonth(curYear, curMonth);
   const firstDow = firstDayOfWeek(curYear, curMonth);
   const isCurMonth = (curYear === todayObj.getFullYear() && curMonth === todayObj.getMonth()+1);
@@ -461,33 +507,30 @@ function changeMonth(delta) {
   curMonth += delta;
   if (curMonth > 12) { curMonth = 1; curYear++; }
   if (curMonth < 1)  { curMonth = 12; curYear--; }
-  render();
   // 同步 URL（不刷页）
   const url = new URL(location.href);
   url.searchParams.set('year', curYear);
   url.searchParams.set('month', curMonth);
   history.replaceState(null, '', url);
+  loadAndRender();
 }
 
 // ──────────────────────────────────────────────
 //  抽屉
 // ──────────────────────────────────────────────
 let activeDate = '';
+let currentEntries = {};
 
 function openDrawer(dateStr) {
   activeDate = dateStr;
-  const data = loadData();
-  const entry = data.entries[dateStr] || null;
+  const entry = currentEntries[dateStr] || null;
 
   const d = new Date(dateStr + 'T00:00:00');
   const friendly = `${d.getFullYear()} 年 ${d.getMonth()+1} 月 ${d.getDate()} 日`;
   document.getElementById('drawer-date-text').textContent = friendly;
   document.getElementById('drawer-weekday').textContent = WEEKDAYS[d.getDay()];
-
-  // 写日记按钮文案
   document.getElementById('btn-write').textContent = entry ? '✏️ 编辑' : '✏️ 写日记';
 
-  // 内容区
   const body = document.getElementById('drawer-body');
   if (entry && (entry.title || entry.body)) {
     body.innerHTML = `
@@ -495,13 +538,8 @@ function openDrawer(dateStr) {
       <div class="entry-body">${escHtml(entry.body || '')}</div>
     `;
   } else {
-    body.innerHTML = `
-      <div class="entry-empty">
-        <p>这一天还没有日记～</p>
-      </div>
-    `;
+    body.innerHTML = `<div class="entry-empty"><p>这一天还没有日记～</p></div>`;
   }
-
   document.getElementById('drawer-mask').classList.add('open');
 }
 
@@ -522,9 +560,34 @@ function escHtml(str) {
 }
 
 // ──────────────────────────────────────────────
-//  初始化
+//  初始化：先本地缓存，再从云端拉取
 // ──────────────────────────────────────────────
-render();
+async function loadAndRender() {
+  // 先用本地缓存快速渲染
+  const local = loadLocal();
+  // 从本地缓存里过滤出当月数据
+  const localMonth = {};
+  Object.keys(local.entries).forEach(date => {
+    if (date.startsWith(`${curYear}-${String(curMonth).padStart(2,'0')}`)) {
+      localMonth[date] = local.entries[date];
+    }
+  });
+  currentEntries = localMonth;
+  render(localMonth);
+
+  // 从云端拉取最新
+  const cloud = await fetchMonthEntries(curYear, curMonth);
+  if (cloud !== null) {
+    // 同步到本地缓存
+    const updated = loadLocal();
+    Object.assign(updated.entries, cloud);
+    localStorage.setItem('diary_entries_v1', JSON.stringify(updated));
+    currentEntries = cloud;
+    render(cloud);
+  }
+}
+
+loadAndRender();
 </script>
 </body>
 </html>
