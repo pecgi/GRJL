@@ -415,27 +415,35 @@ function showMsg(text, success = false) {
   el.className = 'auth-msg' + (success ? ' success' : '');
 }
 
-// ── 登录状态监听 ──
-let sessionChecked = false;
+// ── 从 localStorage 读取 session（绕过 sb.auth.getSession 卡住问题）──
+function getStoredSession() {
+  const key = `sb-${SUPABASE_URL.split('//')[1].split('.')[0]}-auth-token`;
+  try {
+    const raw = localStorage.getItem(key);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw);
+    // 检查是否过期
+    if (parsed.expires_at && parsed.expires_at * 1000 < Date.now()) return null;
+    return parsed;
+  } catch(e) { return null; }
+}
 
+// ── 登录状态监听 ──
 sb.auth.onAuthStateChange((event, session) => {
-  if (session?.user) {
+  if (event === 'SIGNED_IN' && session?.user) {
     showApp(session.user);
-  } else if (sessionChecked) {
-    // 只有初始检查完毕后的状态变化（比如退出）才显示登录页
+  } else if (event === 'SIGNED_OUT') {
     showAuth();
   }
 });
 
-(async () => {
-  const { data: { session } } = await sb.auth.getSession();
-  sessionChecked = true;
-  if (session?.user) {
-    showApp(session.user);
-  } else {
-    showAuth();
-  }
-})();
+// 初始检查：直接从 localStorage 读取，不 await sb.auth.getSession()
+const storedSession = getStoredSession();
+if (storedSession?.user) {
+  showApp(storedSession.user);
+} else {
+  showAuth();
+}
 
 function showApp(user) {
   document.getElementById('auth-screen').style.display = 'none';

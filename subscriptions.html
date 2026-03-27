@@ -613,8 +613,9 @@ let selectedColor = COLORS[0];
 
 // ── Auth ───────────────────────────────────────────────
 async function handleLogout() {
-  // 先跳转，跳转过程中在后台完成登出
-  sb.auth.signOut(); // 不 await，让它在后台执行
+  // 清除 localStorage 中的 session，彻底登出
+  const key = `sb-${SUPABASE_URL.split('//')[1].split('.')[0]}-auth-token`;
+  localStorage.removeItem(key);
   window.location.replace('./index.html');
 }
 
