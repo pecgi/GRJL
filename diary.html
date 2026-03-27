@@ -143,7 +143,7 @@
       padding: 9px 18px; font-size: .88rem; font-weight: 600;
       cursor: pointer; transition: background .15s, transform .1s;
     }
-    .btn-add-entry:hover { background: #4f46e5; transform: translateY(-1px); }
+    .btn-add-entry:hover { background: var(--primary-dark); transform: translateY(-1px); }
     .btn-today {
       background: #ffffff; color: var(--text-sub);
       border: 1.5px solid var(--card-border); border-radius: 10px;
@@ -238,7 +238,7 @@
 
   <!-- 操作栏 -->
   <div class="action-bar">
-    <button class="btn-add-entry" onclick="openModal()">
+    <button class="btn-add-entry" onclick="goWrite()">
       <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
       记一篇
     </button>
@@ -251,21 +251,6 @@
   <!-- 年份详情 -->
   <div class="detail-section" id="detail-section"></div>
 
-</div>
-
-<!-- ── 记录模态框 ── -->
-<div class="modal-mask" id="modal" onclick="e => { if(e.target===this) closeModal() }">
-  <div class="modal" onclick="event.stopPropagation()">
-    <h3>📔 记一篇日记</h3>
-    <label>日期</label>
-    <input type="date" id="entry-date" />
-    <label>备注 <span style="color:#4b5563">（可选）</span></label>
-    <textarea id="entry-note" placeholder="今天发生了…（可不填）" rows="3"></textarea>
-    <div class="modal-btns">
-      <button class="btn-cancel" onclick="closeModal()">取消</button>
-      <button class="btn-save" onclick="saveEntry()">保存</button>
-    </div>
-  </div>
 </div>
 
 <!-- ── Toast ── -->
@@ -426,36 +411,24 @@ function renderDetail(entries, year) {
 // ──────────────────────────────────────────────────────
 //  操作
 // ──────────────────────────────────────────────────────
-function openModal(date) {
-  document.getElementById('entry-date').value = date || todayStr;
-  document.getElementById('entry-note').value = '';
-  document.getElementById('modal').classList.add('open');
-}
-
-function closeModal() {
-  document.getElementById('modal').classList.remove('open');
-}
-
-function saveEntry() {
-  const date = document.getElementById('entry-date').value;
-  const note = document.getElementById('entry-note').value.trim();
-  if (!date) { showToast('请选择日期'); return; }
-
-  const data = loadData();
-  const existed = !!data.entries[date];
-  data.entries[date] = { note, ts: Date.now() };
-  saveData(data);
-
-  closeModal();
-  showToast(existed ? '已更新这天的记录 ✓' : '记录成功 ✓');
-  activeYear = parseInt(date.slice(0,4));
-  render();
+function goWrite(date) {
+  const d = date || todayStr;
+  window.location.href = `./diary-write.html?date=${d}`;
 }
 
 function markToday() {
   const data = loadData();
   if (data.entries[todayStr]) {
     showToast('今天已记录过了 ✓');
+    return;
+  }
+  // 快速打卡：不跳页面，直接存一条空记录
+  data.entries[todayStr] = { title: '', body: '', savedAt: new Date().toISOString() };
+  saveData(data);
+  showToast('今天已打卡 ✓');
+  activeYear = parseInt(todayStr.slice(0,4));
+  render();
+}
     return;
   }
   data.entries[todayStr] = { note: '', ts: Date.now() };
@@ -465,10 +438,6 @@ function markToday() {
   render();
 }
 
-// 关闭模态框（点遮罩）
-document.getElementById('modal').addEventListener('click', function(e) {
-  if (e.target === this) closeModal();
-});
 
 function showToast(msg) {
   const t = document.getElementById('toast');

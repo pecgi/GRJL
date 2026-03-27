@@ -1,0 +1,436 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>写日记 · 生活数字记录</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #fafafa;
+      --text: #1a1a1a;
+      --text-sub: #aaa;
+      --text-placeholder: #ccc;
+      --border: #e8e8e8;
+      --primary: #5c6bc0;
+      --primary-dark: #3949ab;
+      --radius: 12px;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* ── 顶栏 ── */
+    .top-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 16px 28px;
+      background: #fff;
+      border-bottom: 1px solid var(--border);
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+    .back-link {
+      display: flex; align-items: center; gap: 6px;
+      color: var(--text-sub); font-size: .85rem;
+      text-decoration: none;
+      transition: color .15s;
+      cursor: pointer;
+      background: none; border: none; padding: 0;
+    }
+    .back-link:hover { color: var(--text); }
+
+    .top-actions { display: flex; align-items: center; gap: 10px; }
+
+    .btn-discard {
+      background: none; border: none;
+      color: var(--text-sub); font-size: .88rem;
+      cursor: pointer; padding: 8px 14px; border-radius: 8px;
+      transition: background .15s, color .15s;
+    }
+    .btn-discard:hover { background: #f3f4f6; color: var(--text); }
+
+    .btn-save {
+      background: var(--primary); color: #fff;
+      border: none; border-radius: 10px;
+      padding: 9px 22px; font-size: .9rem; font-weight: 600;
+      cursor: pointer; transition: background .15s, transform .1s;
+    }
+    .btn-save:hover { background: var(--primary-dark); transform: translateY(-1px); }
+    .btn-save:active { transform: translateY(0); }
+    .btn-save:disabled { background: #c7cbe8; cursor: not-allowed; transform: none; }
+
+    /* ── 写作区 ── */
+    .editor-wrap {
+      flex: 1;
+      max-width: 720px;
+      width: 100%;
+      margin: 0 auto;
+      padding: 48px 28px 80px;
+    }
+
+    /* 日期选择 */
+    .date-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 32px;
+    }
+    .date-display {
+      font-size: 1rem;
+      font-weight: 600;
+      color: var(--text);
+      cursor: pointer;
+      padding: 6px 12px;
+      border-radius: 8px;
+      border: 1.5px solid transparent;
+      transition: border-color .15s, background .15s;
+      position: relative;
+    }
+    .date-display:hover {
+      border-color: var(--border);
+      background: #fff;
+    }
+    .date-display .weekday {
+      font-size: .8rem;
+      font-weight: 400;
+      color: var(--text-sub);
+      margin-left: 6px;
+    }
+    /* 隐藏的原生 input[type=date] 叠在 date-display 上 */
+    .date-input-hidden {
+      position: absolute;
+      inset: 0;
+      opacity: 0;
+      cursor: pointer;
+      width: 100%;
+      height: 100%;
+    }
+
+    /* 标题输入 */
+    .title-input {
+      width: 100%;
+      font-size: 1.8rem;
+      font-weight: 700;
+      color: var(--text);
+      background: transparent;
+      border: none;
+      outline: none;
+      resize: none;
+      line-height: 1.3;
+      margin-bottom: 20px;
+      font-family: inherit;
+      overflow: hidden;
+    }
+    .title-input::placeholder { color: var(--text-placeholder); }
+
+    /* 分割线 */
+    .divider {
+      height: 1px;
+      background: var(--border);
+      margin-bottom: 24px;
+    }
+
+    /* 正文输入 */
+    .body-input {
+      width: 100%;
+      min-height: 420px;
+      font-size: 1.05rem;
+      line-height: 1.85;
+      color: var(--text);
+      background: transparent;
+      border: none;
+      outline: none;
+      resize: none;
+      font-family: inherit;
+    }
+    .body-input::placeholder { color: var(--text-placeholder); }
+
+    /* 字数统计 */
+    .word-count {
+      text-align: right;
+      font-size: .78rem;
+      color: var(--text-placeholder);
+      margin-top: 16px;
+      user-select: none;
+    }
+
+    /* ── Toast ── */
+    .toast {
+      position: fixed; bottom: 28px; left: 50%; transform: translateX(-50%) translateY(20px);
+      background: #1a1a1a; color: #fff;
+      padding: 10px 22px; border-radius: 100px;
+      font-size: .88rem; opacity: 0; pointer-events: none;
+      transition: opacity .2s, transform .2s; z-index: 200;
+    }
+    .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+    /* ── 保存成功遮罩 ── */
+    @media (max-width: 600px) {
+      .top-bar { padding: 12px 16px; }
+      .editor-wrap { padding: 32px 20px 60px; }
+      .title-input { font-size: 1.5rem; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- 顶栏 -->
+<div class="top-bar">
+  <button class="back-link" onclick="handleBack()">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
+    日记
+  </button>
+  <div class="top-actions">
+    <button class="btn-discard" onclick="handleDiscard()">放弃</button>
+    <button class="btn-save" id="btn-save" onclick="handleSave()">保存</button>
+  </div>
+</div>
+
+<!-- 写作区 -->
+<div class="editor-wrap">
+
+  <!-- 日期 -->
+  <div class="date-row">
+    <div class="date-display" id="date-display">
+      <span id="date-text"></span>
+      <span class="weekday" id="weekday-text"></span>
+      <input class="date-input-hidden" type="date" id="date-picker" onchange="onDateChange()" />
+    </div>
+  </div>
+
+  <!-- 标题 -->
+  <textarea
+    class="title-input"
+    id="title-input"
+    placeholder="标题（可选）"
+    rows="1"
+    oninput="autoResize(this); updateWordCount()"
+    onkeydown="if(event.key==='Enter'){ event.preventDefault(); document.getElementById('body-input').focus(); }"
+  ></textarea>
+
+  <div class="divider"></div>
+
+  <!-- 正文 -->
+  <textarea
+    class="body-input"
+    id="body-input"
+    placeholder="今天发生了什么……"
+    oninput="updateWordCount()"
+  ></textarea>
+
+  <div class="word-count" id="word-count">0 字</div>
+
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ────────────────────────────────────────────
+//  数据层
+// ────────────────────────────────────────────
+const STORAGE_KEY = 'diary_entries_v1';
+
+function loadData() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    return raw ? JSON.parse(raw) : { entries: {} };
+  } catch(e) { return { entries: {} }; }
+}
+
+function saveData(data) {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+}
+
+// ────────────────────────────────────────────
+//  日期工具
+// ────────────────────────────────────────────
+const WEEKDAYS = ['周日','周一','周二','周三','周四','周五','周六'];
+
+function todayStr() {
+  const d = new Date();
+  return fmtDate(d);
+}
+
+function fmtDate(d) {
+  const y = d.getFullYear();
+  const m = String(d.getMonth()+1).padStart(2,'0');
+  const dd = String(d.getDate()).padStart(2,'0');
+  return `${y}-${m}-${dd}`;
+}
+
+function parseDate(str) {
+  const [y, m, d] = str.split('-').map(Number);
+  return new Date(y, m-1, d);
+}
+
+function friendlyDate(str) {
+  const d = parseDate(str);
+  const today = new Date(); today.setHours(0,0,0,0);
+  const target = new Date(d); target.setHours(0,0,0,0);
+  const diff = (today - target) / 86400000;
+  const base = `${d.getFullYear()} 年 ${d.getMonth()+1} 月 ${d.getDate()} 日`;
+  if (diff === 0) return { date: base, week: WEEKDAYS[d.getDay()] + ' · 今天' };
+  if (diff === 1) return { date: base, week: WEEKDAYS[d.getDay()] + ' · 昨天' };
+  return { date: base, week: WEEKDAYS[d.getDay()] };
+}
+
+// ────────────────────────────────────────────
+//  初始化
+// ────────────────────────────────────────────
+let currentDate = '';
+
+// 从 URL 参数读取日期（可从日记页传入）
+function initPage() {
+  const params = new URLSearchParams(location.search);
+  currentDate = params.get('date') || todayStr();
+
+  // 如果该日期已有记录，载入
+  const data = loadData();
+  const entry = data.entries[currentDate] || {};
+
+  document.getElementById('title-input').value = entry.title || '';
+  document.getElementById('body-input').value = entry.body || '';
+
+  autoResize(document.getElementById('title-input'));
+  updateDateDisplay();
+  updateWordCount();
+
+  // 聚焦正文（如果有内容则移到末尾）
+  const bodyEl = document.getElementById('body-input');
+  bodyEl.focus();
+  const len = bodyEl.value.length;
+  bodyEl.setSelectionRange(len, len);
+}
+
+function updateDateDisplay() {
+  const { date, week } = friendlyDate(currentDate);
+  document.getElementById('date-text').textContent = date;
+  document.getElementById('weekday-text').textContent = week;
+  document.getElementById('date-picker').value = currentDate;
+}
+
+function onDateChange() {
+  const picker = document.getElementById('date-picker');
+  if (!picker.value) return;
+  currentDate = picker.value;
+
+  // 切换日期时，载入已有内容
+  const data = loadData();
+  const entry = data.entries[currentDate] || {};
+  document.getElementById('title-input').value = entry.title || '';
+  document.getElementById('body-input').value = entry.body || '';
+  autoResize(document.getElementById('title-input'));
+  updateDateDisplay();
+  updateWordCount();
+}
+
+// ────────────────────────────────────────────
+//  字数统计
+// ────────────────────────────────────────────
+function updateWordCount() {
+  const title = document.getElementById('title-input').value;
+  const body = document.getElementById('body-input').value;
+  const total = (title + body).replace(/\s/g, '').length;
+  document.getElementById('word-count').textContent = total > 0 ? `${total} 字` : '0 字';
+}
+
+// ────────────────────────────────────────────
+//  自动高度（标题）
+// ────────────────────────────────────────────
+function autoResize(el) {
+  el.style.height = 'auto';
+  el.style.height = el.scrollHeight + 'px';
+}
+
+// ────────────────────────────────────────────
+//  保存
+// ────────────────────────────────────────────
+function handleSave() {
+  const title = document.getElementById('title-input').value.trim();
+  const body = document.getElementById('body-input').value.trim();
+
+  if (!body && !title) {
+    showToast('请先写点什么 ✏️');
+    return;
+  }
+
+  const data = loadData();
+  data.entries[currentDate] = {
+    title,
+    body,
+    savedAt: new Date().toISOString()
+  };
+  saveData(data);
+
+  showToast('已保存 ✓');
+
+  // 短暂延迟后返回日记列表
+  setTimeout(() => {
+    window.location.href = './diary.html';
+  }, 800);
+}
+
+// ────────────────────────────────────────────
+//  放弃 / 返回
+// ────────────────────────────────────────────
+function handleDiscard() {
+  const body = document.getElementById('body-input').value.trim();
+  const title = document.getElementById('title-input').value.trim();
+  if (body || title) {
+    if (!confirm('放弃这篇日记？内容不会被保存。')) return;
+  }
+  window.location.href = './diary.html';
+}
+
+function handleBack() {
+  const body = document.getElementById('body-input').value.trim();
+  const title = document.getElementById('title-input').value.trim();
+
+  // 检查是否有已保存的内容
+  const data = loadData();
+  const entry = data.entries[currentDate] || {};
+  const unchanged = (title === (entry.title||'')) && (body === (entry.body||''));
+
+  if (!unchanged && (body || title)) {
+    if (!confirm('有未保存的内容，确定离开？')) return;
+  }
+  window.location.href = './diary.html';
+}
+
+// ────────────────────────────────────────────
+//  Toast
+// ────────────────────────────────────────────
+let toastTimer = null;
+function showToast(msg) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => el.classList.remove('show'), 2000);
+}
+
+// ────────────────────────────────────────────
+//  快捷键 Ctrl+S / Cmd+S
+// ────────────────────────────────────────────
+document.addEventListener('keydown', (e) => {
+  if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+    e.preventDefault();
+    handleSave();
+  }
+});
+
+// 启动
+initPage();
+</script>
+</body>
+</html>
