@@ -674,8 +674,7 @@ function setLoading(on) {
 
 async function loadSubscriptions() {
   setLoading(true);
-  const { data: { session } } = await sb.auth.getSession();
-  const token = session?.access_token;
+  const token = getAccessToken();
   if (!token) { setLoading(false); window.location.replace('./index.html'); return; }
   
   const response = await fetch(
@@ -727,15 +726,27 @@ function localToDB(data) {
   };
 }
 
+// 从 localStorage 直接读取 access_token，绕过 supabase-js
+function getAccessToken() {
+  // supabase-js v2 的 localStorage key 格式
+  const key = `sb-${SUPABASE_URL.split('//')[1].split('.')[0]}-auth-token`;
+  try {
+    const raw = localStorage.getItem(key);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw);
+    return parsed?.access_token || null;
+  } catch(e) {
+    return null;
+  }
+}
+
 async function dbInsert(data) {
   setLoading(true);
   const payload = localToDB(data);
   console.log('dbInsert payload:', payload);
   
-  // 获取当前 session token
-  const { data: { session } } = await sb.auth.getSession();
-  const token = session?.access_token;
-  console.log('current access_token:', token ? token.slice(0,30)+'...' : '❌ 无 token，未登录！');
+  const token = getAccessToken();
+  console.log('access_token from localStorage:', token ? token.slice(0,30)+'...' : '❌ 无 token');
   
   if (!token) {
     setLoading(false);
@@ -743,7 +754,6 @@ async function dbInsert(data) {
   }
   
   try {
-    // 使用原生 fetch 绕过 supabase-js 的潜在问题
     const response = await fetch(`${SUPABASE_URL}/rest/v1/subscriptions`, {
       method: 'POST',
       headers: {
@@ -764,7 +774,7 @@ async function dbInsert(data) {
     }
     
     const rows = await response.json();
-    console.log('dbInsert success, returned rows:', rows);
+    console.log('dbInsert success:', rows);
     
     const row = rows && rows.length > 0 ? rows[0] : null;
     if (!row) throw new Error('插入成功但未返回数据');
@@ -779,8 +789,7 @@ async function dbInsert(data) {
 
 async function dbUpdate(id, data) {
   setLoading(true);
-  const { data: { session } } = await sb.auth.getSession();
-  const token = session?.access_token;
+  const token = getAccessToken();
   if (!token) { setLoading(false); throw new Error('未登录'); }
   const response = await fetch(
     `${SUPABASE_URL}/rest/v1/subscriptions?id=eq.${id}&user_id=eq.${currentUser.id}`,
@@ -803,8 +812,7 @@ async function dbUpdate(id, data) {
 
 async function dbDelete(id) {
   setLoading(true);
-  const { data: { session } } = await sb.auth.getSession();
-  const token = session?.access_token;
+  const token = getAccessToken();
   if (!token) { setLoading(false); throw new Error('未登录'); }
   const response = await fetch(
     `${SUPABASE_URL}/rest/v1/subscriptions?id=eq.${id}&user_id=eq.${currentUser.id}`,
