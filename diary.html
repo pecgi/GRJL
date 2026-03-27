@@ -1,0 +1,499 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>日记 · 生活数字记录</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #0f1117;
+      --card-bg: #1a1d27;
+      --card-border: rgba(255,255,255,.07);
+      --text: #e8e8f0;
+      --text-sub: #7a7d8e;
+      --green: #22c55e;
+      --yellow: #eab308;
+      --orange: #f97316;
+      --gray: #4b5563;
+      --primary: #6366f1;
+      --radius: 14px;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+      min-height: 100vh;
+    }
+
+    /* ── Header ── */
+    .top-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 18px 28px;
+      border-bottom: 1px solid var(--card-border);
+    }
+    .top-bar-left { display: flex; align-items: center; gap: 16px; }
+    .back-link {
+      display: flex; align-items: center; gap: 6px;
+      color: var(--text-sub); font-size: .85rem;
+      text-decoration: none;
+      transition: color .15s;
+    }
+    .back-link:hover { color: var(--text); }
+    .page-title {
+      display: flex; align-items: center; gap: 10px;
+      font-size: 1.15rem; font-weight: 700;
+    }
+    .page-title span { color: var(--text-sub); font-size: .82rem; font-weight: 400; }
+    .update-time { color: var(--text-sub); font-size: .82rem; }
+
+    /* ── Main ── */
+    .main { padding: 28px 28px 60px; max-width: 1200px; margin: 0 auto; }
+
+    /* ── Year Grid ── */
+    .year-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+      gap: 10px;
+      margin-bottom: 36px;
+    }
+    .year-card {
+      background: var(--card-bg);
+      border: 1.5px solid var(--card-border);
+      border-radius: var(--radius);
+      padding: 14px 14px 12px;
+      cursor: pointer;
+      transition: border-color .2s, transform .15s;
+      position: relative;
+    }
+    .year-card:hover { transform: translateY(-2px); border-color: rgba(255,255,255,.18); }
+    .year-card.active {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 1px var(--primary), 0 4px 20px rgba(99,102,241,.25);
+    }
+    .year-card .yr { font-size: .88rem; font-weight: 600; color: var(--text-sub); margin-bottom: 5px; }
+    .year-card .pct { font-size: 1.35rem; font-weight: 800; line-height: 1.1; margin-bottom: 8px; }
+    .year-card .bar-wrap { height: 4px; background: rgba(255,255,255,.08); border-radius: 2px; margin-bottom: 6px; }
+    .year-card .bar-fill { height: 100%; border-radius: 2px; transition: width .5s ease; }
+    .year-card .count { font-size: .72rem; color: var(--text-sub); }
+
+    /* 颜色区间 */
+    .pct.c-green { color: var(--green); }
+    .pct.c-yellow { color: var(--yellow); }
+    .pct.c-orange { color: var(--orange); }
+    .pct.c-gray { color: var(--text-sub); }
+    .bar-fill.c-green { background: var(--green); }
+    .bar-fill.c-yellow { background: var(--yellow); }
+    .bar-fill.c-orange { background: var(--orange); }
+    .bar-fill.c-gray { background: var(--gray); }
+
+    /* ── Year Detail ── */
+    .detail-section { margin-top: 8px; }
+    .detail-header {
+      display: flex; align-items: baseline; gap: 12px;
+      margin-bottom: 18px;
+    }
+    .detail-header .d-year { font-size: 1.6rem; font-weight: 800; }
+    .detail-header .d-summary { font-size: .9rem; color: var(--text-sub); }
+    .month-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(88px, 1fr));
+      gap: 10px;
+    }
+    .month-card {
+      border-radius: 12px;
+      padding: 12px 10px;
+      text-align: center;
+      cursor: pointer;
+      position: relative;
+      transition: transform .15s, opacity .15s;
+    }
+    .month-card:hover { transform: translateY(-2px); }
+    .month-card .m-name { font-size: .8rem; font-weight: 600; margin-bottom: 4px; }
+    .month-card .m-pct { font-size: 1.15rem; font-weight: 800; margin-bottom: 4px; }
+    .month-card .m-count { font-size: .72rem; opacity: .75; }
+
+    /* 月卡颜色主题 */
+    .month-card.mc-green { background: #14532d; color: #bbf7d0; }
+    .month-card.mc-green .m-pct { color: #4ade80; }
+    .month-card.mc-yellow { background: #422006; color: #fef3c7; }
+    .month-card.mc-yellow .m-pct { color: #fbbf24; }
+    .month-card.mc-orange { background: #431407; color: #fed7aa; }
+    .month-card.mc-orange .m-pct { color: #fb923c; }
+    .month-card.mc-gray { background: #1e2130; color: var(--text-sub); }
+    .month-card.mc-gray .m-pct { color: var(--text-sub); }
+    .month-card.mc-future { background: #1a1d27; color: #3d4154; opacity: .5; cursor: default; }
+
+    /* ── 操作区 ── */
+    .action-bar {
+      display: flex; align-items: center; gap: 10px;
+      margin-bottom: 24px; flex-wrap: wrap;
+    }
+    .btn-add-entry {
+      display: flex; align-items: center; gap: 6px;
+      background: var(--primary); color: #fff;
+      border: none; border-radius: 10px;
+      padding: 9px 18px; font-size: .88rem; font-weight: 600;
+      cursor: pointer; transition: background .15s, transform .1s;
+    }
+    .btn-add-entry:hover { background: #4f46e5; transform: translateY(-1px); }
+    .btn-today {
+      background: rgba(255,255,255,.07); color: var(--text-sub);
+      border: 1px solid var(--card-border); border-radius: 10px;
+      padding: 9px 14px; font-size: .85rem;
+      cursor: pointer; transition: background .15s;
+    }
+    .btn-today:hover { background: rgba(255,255,255,.12); color: var(--text); }
+
+    /* ── 模态框 ── */
+    .modal-mask {
+      display: none; position: fixed; inset: 0;
+      background: rgba(0,0,0,.7); backdrop-filter: blur(4px);
+      z-index: 100; align-items: center; justify-content: center; padding: 20px;
+    }
+    .modal-mask.open { display: flex; }
+    .modal {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 20px;
+      padding: 28px 28px 24px;
+      width: 100%; max-width: 420px;
+    }
+    .modal h3 { font-size: 1.1rem; font-weight: 700; margin-bottom: 20px; }
+    .modal label { display: block; font-size: .82rem; color: var(--text-sub); margin-bottom: 6px; }
+    .modal input[type=date], .modal textarea {
+      width: 100%; padding: 10px 14px;
+      background: rgba(255,255,255,.06);
+      border: 1.5px solid rgba(255,255,255,.12);
+      border-radius: 10px; color: var(--text); font-size: .92rem;
+      outline: none; transition: border-color .15s;
+      margin-bottom: 16px;
+    }
+    .modal input[type=date]:focus, .modal textarea:focus { border-color: var(--primary); }
+    .modal textarea { resize: vertical; min-height: 80px; font-family: inherit; }
+    .modal-btns { display: flex; gap: 10px; justify-content: flex-end; margin-top: 4px; }
+    .btn-cancel {
+      background: rgba(255,255,255,.07); color: var(--text-sub);
+      border: 1px solid var(--card-border); border-radius: 10px;
+      padding: 9px 18px; font-size: .88rem; cursor: pointer;
+    }
+    .btn-save {
+      background: var(--primary); color: #fff;
+      border: none; border-radius: 10px;
+      padding: 9px 20px; font-size: .88rem; font-weight: 600;
+      cursor: pointer; transition: background .15s;
+    }
+    .btn-save:hover { background: #4f46e5; }
+
+    /* ── Toast ── */
+    .toast {
+      position: fixed; bottom: 28px; left: 50%; transform: translateX(-50%) translateY(20px);
+      background: #1e2130; border: 1px solid var(--card-border);
+      color: var(--text); padding: 10px 20px; border-radius: 100px;
+      font-size: .88rem; opacity: 0; pointer-events: none;
+      transition: opacity .2s, transform .2s; z-index: 200;
+    }
+    .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+    /* ── 空状态 ── */
+    .empty-tip {
+      text-align: center; color: var(--text-sub);
+      font-size: .9rem; padding: 40px 0;
+    }
+
+    @media (max-width: 600px) {
+      .top-bar { padding: 14px 16px; }
+      .main { padding: 20px 16px 60px; }
+      .year-grid { grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: 8px; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ── 顶栏 ── -->
+<div class="top-bar">
+  <div class="top-bar-left">
+    <a class="back-link" href="./index.html">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
+      生活数字记录
+    </a>
+    <div class="page-title">
+      📔 日记
+      <span id="total-years-label"></span>
+    </div>
+  </div>
+  <div class="update-time" id="update-time"></div>
+</div>
+
+<!-- ── 主内容 ── -->
+<div class="main">
+
+  <!-- 操作栏 -->
+  <div class="action-bar">
+    <button class="btn-add-entry" onclick="openModal()">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+      记一篇
+    </button>
+    <button class="btn-today" onclick="markToday()">✓ 今天写了</button>
+  </div>
+
+  <!-- 年份卡片 -->
+  <div class="year-grid" id="year-grid"></div>
+
+  <!-- 年份详情 -->
+  <div class="detail-section" id="detail-section"></div>
+
+</div>
+
+<!-- ── 记录模态框 ── -->
+<div class="modal-mask" id="modal" onclick="e => { if(e.target===this) closeModal() }">
+  <div class="modal" onclick="event.stopPropagation()">
+    <h3>📔 记一篇日记</h3>
+    <label>日期</label>
+    <input type="date" id="entry-date" />
+    <label>备注 <span style="color:#4b5563">（可选）</span></label>
+    <textarea id="entry-note" placeholder="今天发生了…（可不填）" rows="3"></textarea>
+    <div class="modal-btns">
+      <button class="btn-cancel" onclick="closeModal()">取消</button>
+      <button class="btn-save" onclick="saveEntry()">保存</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── Toast ── -->
+<div class="toast" id="toast"></div>
+
+<script>
+// ──────────────────────────────────────────────────────
+//  数据层：使用 localStorage 存储
+//  数据结构：{ entries: { "2026-03-27": { note: "" }, ... } }
+// ──────────────────────────────────────────────────────
+const STORAGE_KEY = 'diary_entries_v1';
+
+function loadData() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    return raw ? JSON.parse(raw) : { entries: {} };
+  } catch(e) { return { entries: {} }; }
+}
+
+function saveData(data) {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+  render();
+}
+
+// ──────────────────────────────────────────────────────
+//  工具函数
+// ──────────────────────────────────────────────────────
+const today = new Date();
+const todayStr = fmt(today);
+
+function fmt(d) {
+  const y = d.getFullYear();
+  const m = String(d.getMonth()+1).padStart(2,'0');
+  const dd = String(d.getDate()).padStart(2,'0');
+  return `${y}-${m}-${dd}`;
+}
+
+function daysInYear(year) {
+  return ((year % 4 === 0 && year % 100 !== 0) || year % 400 === 0) ? 366 : 365;
+}
+
+function daysInMonth(year, month) {
+  return new Date(year, month, 0).getDate();
+}
+
+// 今天是今年第几天
+function dayOfYear(dateStr) {
+  const d = new Date(dateStr);
+  const start = new Date(d.getFullYear(), 0, 0);
+  return Math.floor((d - start) / 86400000);
+}
+
+function pctColor(p) {
+  if (p >= 90) return 'green';
+  if (p >= 70) return 'yellow';
+  if (p >= 30) return 'orange';
+  return 'gray';
+}
+
+function pctLabel(p) {
+  return p.toFixed(1).replace(/\.0$/, '') + '%';
+}
+
+// ──────────────────────────────────────────────────────
+//  渲染
+// ──────────────────────────────────────────────────────
+let activeYear = today.getFullYear();
+
+function render() {
+  const data = loadData();
+  const entries = data.entries;
+
+  // 计算有记录的年份范围
+  const entryYears = new Set(Object.keys(entries).map(d => parseInt(d.slice(0,4))));
+  entryYears.add(today.getFullYear());
+  const years = Array.from(entryYears).sort((a,b) => b-a); // 降序
+
+  // 更新标题
+  document.getElementById('total-years-label').textContent = `（${years.length}年）`;
+  document.getElementById('update-time').textContent = `更新于 ${today.getFullYear()}/${today.getMonth()+1}/${today.getDate()}`;
+
+  // 年份网格
+  const grid = document.getElementById('year-grid');
+  grid.innerHTML = '';
+  years.forEach(year => {
+    const total = daysInYear(year);
+    const cutoff = year === today.getFullYear()
+      ? dayOfYear(todayStr)
+      : total;
+    const count = Object.keys(entries).filter(d => d.startsWith(year+'')).length;
+    const pct = cutoff > 0 ? (count / cutoff) * 100 : 0;
+    const color = pctColor(pct);
+
+    const card = document.createElement('div');
+    card.className = `year-card${activeYear === year ? ' active' : ''}`;
+    card.innerHTML = `
+      <div class="yr">${year}</div>
+      <div class="pct c-${color}">${pctLabel(pct)}</div>
+      <div class="bar-wrap"><div class="bar-fill c-${color}" style="width:${Math.min(pct,100)}%"></div></div>
+      <div class="count">${count}/${cutoff}</div>
+    `;
+    card.onclick = () => { activeYear = year; render(); };
+    grid.appendChild(card);
+  });
+
+  // 年份详情
+  renderDetail(entries, activeYear);
+}
+
+function renderDetail(entries, year) {
+  const section = document.getElementById('detail-section');
+  const total = daysInYear(year);
+  const isCurrentYear = year === today.getFullYear();
+  const cutoff = isCurrentYear ? dayOfYear(todayStr) : total;
+  const count = Object.keys(entries).filter(d => d.startsWith(year+'')).length;
+  const pct = cutoff > 0 ? (count / cutoff) * 100 : 0;
+
+  const months = Array.from({length:12}, (_,i) => i+1);
+  const monthCards = months.map(m => {
+    const days = daysInMonth(year, m);
+    const monthStr = `${year}-${String(m).padStart(2,'0')}`;
+    const mCount = Object.keys(entries).filter(d => d.startsWith(monthStr)).length;
+
+    // 判断是否是未来月份
+    const isFuture = isCurrentYear && m > today.getMonth()+1;
+    // 当月截止到今天
+    const mCutoff = (isCurrentYear && m === today.getMonth()+1)
+      ? today.getDate()
+      : (isFuture ? 0 : days);
+
+    const mPct = mCutoff > 0 ? (mCount / mCutoff) * 100 : 0;
+    const mColor = pctColor(mPct);
+
+    if (isFuture) {
+      return `<div class="month-card mc-future">
+        <div class="m-name">${m}月</div>
+        <div class="m-pct">—</div>
+        <div class="m-count">${days}天</div>
+      </div>`;
+    }
+
+    return `<div class="month-card mc-${mColor}">
+      <div class="m-name">${m}月</div>
+      <div class="m-pct">${pctLabel(mPct)}</div>
+      <div class="m-count">${mCount}/${mCutoff}</div>
+    </div>`;
+  }).join('');
+
+  section.innerHTML = `
+    <div class="detail-header">
+      <span class="d-year">${year}</span>
+      <span class="d-summary">${count} 篇 / ${cutoff} 天 · 覆盖率 ${pctLabel(pct)}</span>
+    </div>
+    <div class="month-grid">${monthCards}</div>
+  `;
+}
+
+// ──────────────────────────────────────────────────────
+//  操作
+// ──────────────────────────────────────────────────────
+function openModal(date) {
+  document.getElementById('entry-date').value = date || todayStr;
+  document.getElementById('entry-note').value = '';
+  document.getElementById('modal').classList.add('open');
+}
+
+function closeModal() {
+  document.getElementById('modal').classList.remove('open');
+}
+
+function saveEntry() {
+  const date = document.getElementById('entry-date').value;
+  const note = document.getElementById('entry-note').value.trim();
+  if (!date) { showToast('请选择日期'); return; }
+
+  const data = loadData();
+  const existed = !!data.entries[date];
+  data.entries[date] = { note, ts: Date.now() };
+  saveData(data);
+
+  closeModal();
+  showToast(existed ? '已更新这天的记录 ✓' : '记录成功 ✓');
+  activeYear = parseInt(date.slice(0,4));
+  render();
+}
+
+function markToday() {
+  const data = loadData();
+  if (data.entries[todayStr]) {
+    showToast('今天已记录过了 ✓');
+    return;
+  }
+  data.entries[todayStr] = { note: '', ts: Date.now() };
+  saveData(data);
+  showToast('今天打卡成功 ✓');
+  activeYear = today.getFullYear();
+  render();
+}
+
+// 关闭模态框（点遮罩）
+document.getElementById('modal').addEventListener('click', function(e) {
+  if (e.target === this) closeModal();
+});
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2000);
+}
+
+// ──────────────────────────────────────────────────────
+//  初始化：检查登录
+// ──────────────────────────────────────────────────────
+const SUPABASE_URL = 'https://qknojxdhdjqjdoqjdnyu.supabase.co';
+function isLoggedIn() {
+  const key = `sb-${SUPABASE_URL.split('//')[1].split('.')[0]}-auth-token`;
+  try {
+    const raw = localStorage.getItem(key);
+    if (!raw) return false;
+    const parsed = JSON.parse(raw);
+    if (parsed.expires_at && parsed.expires_at * 1000 < Date.now()) return false;
+    return !!parsed.access_token;
+  } catch(e) { return false; }
+}
+
+if (!isLoggedIn()) {
+  window.location.replace('./index.html');
+} else {
+  render();
+}
+</script>
+</body>
+</html>
