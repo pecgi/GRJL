@@ -76,49 +76,6 @@
       margin-bottom: 18px;
     }
     .btn-auth-github:hover { border-color: #333; background: #fafafa; }
-    .auth-divider {
-      text-align: center;
-      color: var(--text-sub);
-      font-size: .82rem;
-      margin-bottom: 18px;
-      position: relative;
-    }
-    .auth-divider::before, .auth-divider::after {
-      content: '';
-      position: absolute;
-      top: 50%; width: 35%;
-      height: 1px;
-      background: #eee;
-    }
-    .auth-divider::before { left: 0; }
-    .auth-divider::after { right: 0; }
-    .form-group { margin-bottom: 14px; }
-    .form-group label { display: block; font-size: .82rem; color: var(--text-sub); margin-bottom: 6px; }
-    .form-group input {
-      width: 100%; padding: 11px 14px;
-      border: 1.5px solid #e8e8e8;
-      border-radius: 8px;
-      font-size: .95rem;
-      outline: none;
-      transition: border-color .15s;
-    }
-    .form-group input:focus { border-color: var(--primary); }
-    .btn-auth-email {
-      width: 100%; padding: 13px;
-      background: var(--primary);
-      color: #fff;
-      border: none; border-radius: 10px;
-      font-size: .95rem; font-weight: 600;
-      cursor: pointer;
-      transition: background .15s;
-      margin-top: 4px;
-    }
-    .btn-auth-email:hover { background: var(--primary-dark); }
-    .auth-msg { font-size: .82rem; color: #e53935; margin-top: 10px; text-align: center; min-height: 20px; }
-    .auth-msg.success { color: #43a047; }
-    .auth-toggle { text-align: center; font-size: .82rem; color: var(--text-sub); margin-top: 16px; }
-    .auth-toggle a { color: var(--primary); cursor: pointer; text-decoration: none; }
-    .auth-toggle a:hover { text-decoration: underline; }
 
     /* ════════════════════════════════
        主界面（模块选择）
@@ -276,22 +233,7 @@
       使用 GitHub 登录
     </button>
 
-    <div class="auth-divider">或使用邮箱</div>
 
-    <div class="form-group">
-      <label>邮箱</label>
-      <input type="email" id="auth-email" placeholder="your@email.com" />
-    </div>
-    <div class="form-group">
-      <label>密码</label>
-      <input type="password" id="auth-password" placeholder="至少6位" onkeydown="if(event.key==='Enter')handleEmailAuth()" />
-    </div>
-    <button class="btn-auth-email" onclick="handleEmailAuth()" id="btn-email-auth">登录</button>
-    <div class="auth-msg" id="auth-msg"></div>
-    <div class="auth-toggle">
-      <span id="auth-toggle-text">还没有账号？</span>
-      <a onclick="toggleAuthMode()">立即注册</a>
-    </div>
   </div>
 </div>
 
@@ -356,8 +298,6 @@ const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZ
 const { createClient } = supabase;
 const sb = createClient(SUPABASE_URL, SUPABASE_KEY);
 
-let isLoginMode = true;
-
 // ── 登录方法 ──
 async function loginWithGitHub() {
   // 明确跳回首页（index.html），而不是当前页
@@ -371,49 +311,8 @@ async function loginWithGitHub() {
   if (error) showMsg('登录失败：' + error.message);
 }
 
-function toggleAuthMode() {
-  isLoginMode = !isLoginMode;
-  document.getElementById('btn-email-auth').textContent = isLoginMode ? '登录' : '注册';
-  document.getElementById('auth-toggle-text').textContent = isLoginMode ? '还没有账号？' : '已有账号？';
-  document.querySelector('.auth-toggle a').textContent = isLoginMode ? '立即注册' : '去登录';
-  document.getElementById('auth-msg').textContent = '';
-}
 
-async function handleEmailAuth() {
-  const email = document.getElementById('auth-email').value.trim();
-  const password = document.getElementById('auth-password').value;
-  if (!email || !password) { showMsg('请填写邮箱和密码'); return; }
-  if (password.length < 6) { showMsg('密码至少6位'); return; }
 
-  const btn = document.getElementById('btn-email-auth');
-  btn.textContent = '处理中…'; btn.disabled = true;
-
-  let result;
-  if (isLoginMode) {
-    result = await sb.auth.signInWithPassword({ email, password });
-  } else {
-    result = await sb.auth.signUp({ email, password });
-  }
-
-  btn.textContent = isLoginMode ? '登录' : '注册';
-  btn.disabled = false;
-
-  if (result.error) {
-    showMsg(result.error.message);
-  } else if (!isLoginMode && !result.data?.session) {
-    showMsg('注册成功！请检查邮箱完成验证后登录。', true);
-  }
-}
-
-async function handleLogout() {
-  await sb.auth.signOut();
-}
-
-function showMsg(text, success = false) {
-  const el = document.getElementById('auth-msg');
-  el.textContent = text;
-  el.className = 'auth-msg' + (success ? ' success' : '');
-}
 
 // ── 从 localStorage 读取 session（绕过 sb.auth.getSession 卡住问题）──
 function getStoredSession() {
