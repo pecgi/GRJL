@@ -419,42 +419,6 @@
 </head>
 <body>
 
-<!-- ── Auth Screen ── -->
-<div id="auth-screen">
-  <div class="auth-card">
-    <div class="logo">🗂️</div>
-    <h1>生活数字记录</h1>
-    <p class="subtitle">订阅管理 · 登录后数据自动同步到云端</p>
-
-
-    <!-- GitHub 登录 -->
-    <button class="btn-auth-github" onclick="loginWithGitHub()">
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0 0 24 12c0-6.63-5.37-12-12-12z"/></svg>
-      使用 GitHub 登录
-    </button>
-
-    <div class="auth-divider">或使用邮箱</div>
-
-    <!-- 邮箱登录/注册 -->
-    <div class="auth-form">
-      <div class="form-group">
-        <label>邮箱</label>
-        <input type="email" id="auth-email" placeholder="your@email.com" />
-      </div>
-      <div class="form-group">
-        <label>密码</label>
-        <input type="password" id="auth-password" placeholder="至少6位" onkeydown="if(event.key==='Enter')handleEmailAuth()" />
-      </div>
-      <button class="btn-auth-email" onclick="handleEmailAuth()" id="btn-email-auth">登录</button>
-      <div class="auth-msg" id="auth-msg"></div>
-      <div class="auth-toggle">
-        <span id="auth-toggle-text">还没有账号？</span>
-        <a onclick="toggleAuthMode()">立即注册</a>
-      </div>
-    </div>
-  </div>
-</div>
-
 <!-- ── App Screen ── -->
 <div id="app-screen">
   <!-- Loading Bar -->
@@ -641,7 +605,6 @@ let currentUser = null;
 let editingId = null;
 let deleteId = null;
 let currentFilter = 'all';
-let isLoginMode = true;
 
 const EMOJIS = ['📋','📚','🎓','📰','💡','🎯','🎵','🎬','💻','🌐','⭐','🏆','🔑','🗞️','📊','🎮','🤖','🌟','💎','🔥'];
 const COLORS = ['#5c6bc0','#26a69a','#ef5350','#ff7043','#ab47bc','#42a5f5','#66bb6a','#ffca28','#8d6e63','#78909c'];
@@ -649,57 +612,9 @@ let selectedEmoji = EMOJIS[0];
 let selectedColor = COLORS[0];
 
 // ── Auth ───────────────────────────────────────────────
-async function loginWithGitHub() {
-  const { error } = await sb.auth.signInWithOAuth({
-    provider: 'github',
-    options: { redirectTo: window.location.href }
-  });
-  if (error) showToast('登录失败：' + error.message);
-}
-
-function toggleAuthMode() {
-  isLoginMode = !isLoginMode;
-  document.getElementById('btn-email-auth').textContent = isLoginMode ? '登录' : '注册';
-  document.getElementById('auth-toggle-text').textContent = isLoginMode ? '还没有账号？' : '已有账号？';
-  document.querySelector('.auth-toggle a').textContent = isLoginMode ? '立即注册' : '去登录';
-  document.getElementById('auth-msg').textContent = '';
-}
-
-async function handleEmailAuth() {
-  const email = document.getElementById('auth-email').value.trim();
-  const password = document.getElementById('auth-password').value;
-  const msg = document.getElementById('auth-msg');
-  msg.textContent = '';
-  msg.className = 'auth-msg';
-
-  if (!email || !password) { msg.textContent = '请填写邮箱和密码'; return; }
-  if (password.length < 6) { msg.textContent = '密码至少6位'; return; }
-
-  const btn = document.getElementById('btn-email-auth');
-  btn.textContent = '处理中…';
-  btn.disabled = true;
-
-  let result;
-  if (isLoginMode) {
-    result = await sb.auth.signInWithPassword({ email, password });
-  } else {
-    result = await sb.auth.signUp({ email, password });
-  }
-
-  btn.textContent = isLoginMode ? '登录' : '注册';
-  btn.disabled = false;
-
-  if (result.error) {
-    msg.textContent = result.error.message;
-  } else if (!isLoginMode && !result.data?.session) {
-    msg.textContent = '注册成功！请检查邮箱完成验证后登录。';
-    msg.className = 'auth-msg success';
-  }
-  // 登录成功由 onAuthStateChange 处理
-}
-
 async function handleLogout() {
   await sb.auth.signOut();
+  window.location.href = './index.html';
 }
 
 // ── Auth State ─────────────────────────────────────────
@@ -709,8 +624,8 @@ sb.auth.onAuthStateChange(async (event, session) => {
     showApp();
     await loadSubscriptions();
   } else {
-    currentUser = null;
-    showAuth();
+    // 未登录，跳回首页
+    window.location.href = './index.html';
   }
 });
 
@@ -721,11 +636,12 @@ sb.auth.onAuthStateChange(async (event, session) => {
     currentUser = session.user;
     showApp();
     await loadSubscriptions();
+  } else {
+    window.location.href = './index.html';
   }
 })();
 
 function showApp() {
-  document.getElementById('auth-screen').style.display = 'none';
   document.getElementById('app-screen').style.display = 'block';
   buildEmojiPicker();
   buildColorPicker();
@@ -746,9 +662,8 @@ function showApp() {
 }
 
 function showAuth() {
-  document.getElementById('auth-screen').style.display = 'flex';
-  document.getElementById('app-screen').style.display = 'none';
-  subscriptions = [];
+  // 未登录直接跳首页
+  window.location.href = './index.html';
 }
 
 // ── Data (Supabase) ────────────────────────────────────
