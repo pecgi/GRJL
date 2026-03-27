@@ -360,9 +360,13 @@ let isLoginMode = true;
 
 // ── 登录方法 ──
 async function loginWithGitHub() {
+  // 明确跳回首页（index.html），而不是当前页
+  const origin = window.location.origin;
+  const base = window.location.pathname.replace(/\/[^/]*$/, '/');
+  const redirectTo = origin + base + 'index.html';
   const { error } = await sb.auth.signInWithOAuth({
     provider: 'github',
-    options: { redirectTo: window.location.href }
+    options: { redirectTo }
   });
   if (error) showMsg('登录失败：' + error.message);
 }
