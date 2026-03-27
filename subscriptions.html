@@ -728,23 +728,31 @@ async function dbInsert(data) {
   setLoading(true);
   const payload = localToDB(data);
   console.log('dbInsert payload:', payload);
+  
+  // 10秒超时保护
+  const timeout = new Promise((_, reject) => 
+    setTimeout(() => reject(new Error('请求超时（10秒），请检查网络或 Supabase 连接')), 10000)
+  );
+  
   try {
-    const { data: rows, error } = await sb
-      .from('subscriptions')
-      .insert(payload)
-      .select();
+    const result = await Promise.race([
+      sb.from('subscriptions').insert(payload).select(),
+      timeout
+    ]);
+    
+    const { data: rows, error } = result;
     
     if (error) {
-      console.error('dbInsert error:', error);
+      console.error('dbInsert error code:', error.code);
+      console.error('dbInsert error msg:', error.message);
+      console.error('dbInsert error details:', error.details);
+      console.error('dbInsert error hint:', error.hint);
       throw error;
     }
     
     console.log('dbInsert success, returned rows:', rows);
-    // 取第一条返回的数据
     const row = rows && rows.length > 0 ? rows[0] : null;
-    if (!row) {
-      throw new Error('插入成功但未返回数据');
-    }
+    if (!row) throw new Error('插入成功但未返回数据');
     return dbToLocal(row);
   } catch (err) {
     console.error('dbInsert catch:', err);
