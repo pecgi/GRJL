@@ -612,20 +612,24 @@ let selectedEmoji = EMOJIS[0];
 let selectedColor = COLORS[0];
 
 // ── Auth ───────────────────────────────────────────────
+let isLoggingOut = false;
+
 async function handleLogout() {
+  isLoggingOut = true;
   await sb.auth.signOut();
-  window.location.href = './index.html';
+  window.location.replace('./index.html');
 }
 
 // ── Auth State ─────────────────────────────────────────
 sb.auth.onAuthStateChange(async (event, session) => {
+  if (isLoggingOut) return; // 退出中，由 handleLogout 负责跳转
   if (session?.user) {
     currentUser = session.user;
     showApp();
     await loadSubscriptions();
   } else {
     // 未登录，跳回首页
-    window.location.href = './index.html';
+    window.location.replace('./index.html');
   }
 });
 
@@ -637,7 +641,7 @@ sb.auth.onAuthStateChange(async (event, session) => {
     showApp();
     await loadSubscriptions();
   } else {
-    window.location.href = './index.html';
+    window.location.replace('./index.html');
   }
 })();
 
