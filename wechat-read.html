@@ -1,0 +1,701 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>公众号阅读 · 生活数字记录</title>
+  <style>
+    :root {
+      --bg: #fafafa;
+      --surface: #ffffff;
+      --text: #1a1a1a;
+      --text-sub: #888;
+      --border: #ebebeb;
+      --primary: #5c6bc0;
+      --primary-dark: #3949ab;
+      --green: #43a047;
+      --red: #e53935;
+      --star: #f9a825;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+    }
+
+    /* ── 顶栏 ── */
+    .top-bar {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      background: rgba(250,250,250,.92);
+      backdrop-filter: blur(10px);
+      border-bottom: 1px solid var(--border);
+      padding: 0 40px;
+      height: 56px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+    }
+    .back-link {
+      display: flex; align-items: center; gap: 6px;
+      font-size: .85rem; color: var(--text-sub);
+      text-decoration: none; background: none; border: none; cursor: pointer;
+      transition: color .15s;
+    }
+    .back-link:hover { color: var(--text); }
+    .top-title { font-size: .95rem; font-weight: 600; flex: 1; text-align: center; }
+    .btn-add {
+      padding: 7px 18px;
+      background: var(--primary);
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      font-size: .85rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: background .15s;
+      white-space: nowrap;
+    }
+    .btn-add:hover { background: var(--primary-dark); }
+
+    /* ── 筛选栏 ── */
+    .filter-bar {
+      max-width: 860px;
+      margin: 28px auto 0;
+      padding: 0 40px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+    .filter-btn {
+      padding: 5px 14px;
+      border: 1px solid var(--border);
+      border-radius: 50px;
+      background: var(--surface);
+      font-size: .8rem;
+      color: var(--text-sub);
+      cursor: pointer;
+      transition: all .15s;
+    }
+    .filter-btn:hover { border-color: var(--primary); color: var(--primary); }
+    .filter-btn.active { border-color: var(--primary); background: #f3f4fd; color: var(--primary); font-weight: 500; }
+    .filter-sep { width: 1px; height: 18px; background: var(--border); }
+    .account-filter {
+      padding: 5px 12px;
+      border: 1px solid var(--border);
+      border-radius: 50px;
+      background: var(--surface);
+      font-size: .8rem;
+      color: var(--text-sub);
+      cursor: pointer;
+      outline: none;
+      appearance: none;
+    }
+    .account-filter:focus { border-color: var(--primary); }
+
+    /* ── 统计条 ── */
+    .stats-bar {
+      max-width: 860px;
+      margin: 16px auto 0;
+      padding: 0 40px;
+      display: flex;
+      gap: 20px;
+      font-size: .8rem;
+      color: var(--text-sub);
+    }
+    .stats-bar span b { color: var(--text); font-weight: 600; }
+
+    /* ── 列表区 ── */
+    .list-wrap {
+      max-width: 860px;
+      margin: 20px auto 80px;
+      padding: 0 40px;
+    }
+
+    /* ── 空状态 ── */
+    .empty-state {
+      text-align: center;
+      padding: 80px 20px;
+      color: var(--text-sub);
+    }
+    .empty-state .empty-icon { font-size: 3rem; margin-bottom: 16px; }
+    .empty-state p { font-size: .9rem; line-height: 1.8; }
+
+    /* ── 文章卡片 ── */
+    .article-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 18px 20px;
+      margin-bottom: 10px;
+      display: flex;
+      gap: 16px;
+      align-items: flex-start;
+      transition: box-shadow .15s, border-color .15s;
+      position: relative;
+    }
+    .article-card:hover { border-color: #ddd; box-shadow: 0 2px 12px rgba(0,0,0,.06); }
+    .article-card.is-read { opacity: .6; }
+
+    .card-check {
+      margin-top: 3px;
+      flex-shrink: 0;
+      width: 18px; height: 18px;
+      border: 1.5px solid var(--border);
+      border-radius: 50%;
+      cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      transition: all .15s;
+    }
+    .card-check:hover { border-color: var(--green); }
+    .card-check.checked { border-color: var(--green); background: var(--green); }
+    .card-check.checked::after { content: '✓'; color: #fff; font-size: 10px; font-weight: 700; }
+
+    .card-body { flex: 1; min-width: 0; }
+    .card-meta {
+      display: flex; align-items: center; gap: 8px;
+      margin-bottom: 6px;
+      flex-wrap: wrap;
+    }
+    .card-account {
+      font-size: .75rem;
+      color: var(--primary);
+      background: #f3f4fd;
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-weight: 500;
+    }
+    .card-date { font-size: .75rem; color: var(--text-sub); }
+    .card-title {
+      font-size: .95rem;
+      font-weight: 600;
+      line-height: 1.5;
+      margin-bottom: 6px;
+      color: var(--text);
+      text-decoration: none;
+      display: block;
+    }
+    .article-card.is-read .card-title { text-decoration: line-through; color: var(--text-sub); }
+    .card-title:hover { color: var(--primary); }
+    .card-summary {
+      font-size: .82rem;
+      color: var(--text-sub);
+      line-height: 1.6;
+      margin-bottom: 8px;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+    .card-tags { display: flex; gap: 6px; flex-wrap: wrap; }
+    .card-tag {
+      font-size: .7rem;
+      padding: 2px 8px;
+      border: 1px solid var(--border);
+      border-radius: 50px;
+      color: var(--text-sub);
+    }
+
+    .card-actions {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+      flex-shrink: 0;
+    }
+    .action-btn {
+      background: none;
+      border: none;
+      cursor: pointer;
+      padding: 4px;
+      border-radius: 6px;
+      font-size: 1rem;
+      color: var(--text-sub);
+      transition: color .15s, background .15s;
+      line-height: 1;
+    }
+    .action-btn:hover { background: #f5f5f5; color: var(--text); }
+    .action-btn.starred { color: var(--star); }
+    .action-btn.delete:hover { color: var(--red); background: #fff5f5; }
+
+    /* ── 弹窗 ── */
+    .modal-overlay {
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,.4);
+      z-index: 200;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+    .modal-overlay.show { display: flex; }
+    .modal {
+      background: var(--surface);
+      border-radius: 16px;
+      padding: 28px;
+      width: 100%;
+      max-width: 480px;
+      box-shadow: 0 20px 60px rgba(0,0,0,.2);
+      max-height: 90vh;
+      overflow-y: auto;
+    }
+    .modal-title { font-size: 1.05rem; font-weight: 700; margin-bottom: 20px; }
+    .form-group { margin-bottom: 16px; }
+    .form-label { display: block; font-size: .82rem; font-weight: 500; margin-bottom: 6px; color: var(--text-sub); }
+    .form-label span { color: var(--red); }
+    .form-input {
+      width: 100%;
+      padding: 10px 12px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      font-size: .9rem;
+      outline: none;
+      transition: border-color .15s;
+      font-family: inherit;
+      background: var(--bg);
+    }
+    .form-input:focus { border-color: var(--primary); background: #fff; }
+    textarea.form-input { resize: vertical; min-height: 72px; }
+    .form-hint { font-size: .75rem; color: var(--text-sub); margin-top: 4px; }
+    .form-actions { display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px; }
+    .btn-cancel {
+      padding: 9px 20px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: var(--surface);
+      font-size: .88rem;
+      cursor: pointer;
+      transition: background .15s;
+    }
+    .btn-cancel:hover { background: #f5f5f5; }
+    .btn-submit {
+      padding: 9px 20px;
+      border: none;
+      border-radius: 8px;
+      background: var(--primary);
+      color: #fff;
+      font-size: .88rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: background .15s;
+    }
+    .btn-submit:hover { background: var(--primary-dark); }
+    .btn-submit:disabled { opacity: .5; cursor: not-allowed; }
+
+    /* ── Toast ── */
+    .toast {
+      position: fixed;
+      bottom: 32px; left: 50%;
+      transform: translateX(-50%) translateY(20px);
+      background: #1a1a1a;
+      color: #fff;
+      padding: 10px 20px;
+      border-radius: 8px;
+      font-size: .88rem;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity .25s, transform .25s;
+      z-index: 999;
+      white-space: nowrap;
+    }
+    .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+    /* ── 加载态 ── */
+    .loading-wrap {
+      text-align: center;
+      padding: 60px 20px;
+      color: var(--text-sub);
+      font-size: .9rem;
+    }
+
+    @media (max-width: 600px) {
+      .top-bar { padding: 0 16px; }
+      .filter-bar, .stats-bar, .list-wrap { padding: 0 16px; }
+      .filter-bar { margin-top: 20px; }
+      .list-wrap { margin-top: 16px; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- 顶栏 -->
+<div class="top-bar">
+  <button class="back-link" onclick="location.href='./index.html'">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
+    生活数字记录
+  </button>
+  <div class="top-title">📰 公众号阅读</div>
+  <button class="btn-add" onclick="openAddModal()">+ 收藏文章</button>
+</div>
+
+<!-- 筛选栏 -->
+<div class="filter-bar">
+  <button class="filter-btn active" onclick="setFilter('all', this)">全部</button>
+  <button class="filter-btn" onclick="setFilter('unread', this)">未读</button>
+  <button class="filter-btn" onclick="setFilter('starred', this)">⭐ 收藏</button>
+  <div class="filter-sep"></div>
+  <select class="account-filter" id="account-filter" onchange="filterByAccount()">
+    <option value="">所有公众号</option>
+  </select>
+</div>
+
+<!-- 统计 -->
+<div class="stats-bar" id="stats-bar">
+  <span>共 <b id="stat-total">0</b> 篇</span>
+  <span>未读 <b id="stat-unread">0</b> 篇</span>
+  <span>收藏 <b id="stat-starred">0</b> 篇</span>
+</div>
+
+<!-- 列表 -->
+<div class="list-wrap" id="list-wrap">
+  <div class="loading-wrap">加载中…</div>
+</div>
+
+<!-- 添加文章弹窗 -->
+<div class="modal-overlay" id="add-modal">
+  <div class="modal">
+    <div class="modal-title">收藏文章</div>
+    <div class="form-group">
+      <label class="form-label">文章链接 <span>*</span></label>
+      <input class="form-input" id="input-url" type="url" placeholder="https://mp.weixin.qq.com/s/…" />
+      <div class="form-hint">粘贴公众号文章链接</div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">标题 <span>*</span></label>
+      <input class="form-input" id="input-title" type="text" placeholder="文章标题" />
+    </div>
+    <div class="form-group">
+      <label class="form-label">公众号名称 <span>*</span></label>
+      <input class="form-input" id="input-account" type="text" placeholder="如：36氪、少数派" list="account-datalist" />
+      <datalist id="account-datalist"></datalist>
+    </div>
+    <div class="form-group">
+      <label class="form-label">摘要 / 备注</label>
+      <textarea class="form-input" id="input-summary" placeholder="简短描述文章内容，或写下你的想法…"></textarea>
+    </div>
+    <div class="form-group">
+      <label class="form-label">标签</label>
+      <input class="form-input" id="input-tags" type="text" placeholder="用空格或逗号分隔，如：AI 效率 设计" />
+    </div>
+    <div class="form-actions">
+      <button class="btn-cancel" onclick="closeAddModal()">取消</button>
+      <button class="btn-submit" id="btn-submit" onclick="handleSubmit()">保存</button>
+    </div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<script>
+// ────────────────────────────────────────────
+//  Supabase 配置
+// ────────────────────────────────────────────
+const SUPABASE_URL  = 'https://qknojxdhdjqjdoqjdnyu.supabase.co';
+const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFrbm9qeGRoZGpxamRvcWpkbnl1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ1Mzg2ODAsImV4cCI6MjA5MDExNDY4MH0.8BnUklTASBnzgZgu-_hbcVNoZ_LcUcLCR_9P5y8PWjo';
+
+function getToken() {
+  try {
+    const ref = SUPABASE_URL.split('//')[1].split('.')[0];
+    const raw = localStorage.getItem(`sb-${ref}-auth-token`);
+    if (!raw) return null;
+    const p = JSON.parse(raw);
+    if (p.expires_at && p.expires_at * 1000 < Date.now()) return null;
+    return p.access_token || null;
+  } catch(e) { return null; }
+}
+
+function getUserId() {
+  try {
+    const token = getToken();
+    if (!token) return null;
+    return JSON.parse(atob(token.split('.')[1])).sub || null;
+  } catch(e) { return null; }
+}
+
+function isLoggedIn() { return !!getToken(); }
+
+// ────────────────────────────────────────────
+//  Supabase REST 封装
+// ────────────────────────────────────────────
+async function sbFetch(method, path, body) {
+  const token = getToken();
+  const res = await fetch(`${SUPABASE_URL}/rest/v1/${path}`, {
+    method,
+    headers: {
+      'apikey': SUPABASE_ANON,
+      'Authorization': `Bearer ${token}`,
+      'Content-Type': 'application/json',
+      'Prefer': method === 'POST' ? 'resolution=merge-duplicates,return=representation' : 'return=minimal',
+    },
+    body: body ? JSON.stringify(body) : undefined,
+  });
+  return res;
+}
+
+// ────────────────────────────────────────────
+//  状态
+// ────────────────────────────────────────────
+let allArticles = [];
+let currentFilter = 'all';
+let currentAccount = '';
+
+// ────────────────────────────────────────────
+//  初始化
+// ────────────────────────────────────────────
+async function initPage() {
+  if (!isLoggedIn()) {
+    location.href = './index.html';
+    return;
+  }
+  await loadArticles();
+}
+
+// ────────────────────────────────────────────
+//  拉取文章
+// ────────────────────────────────────────────
+async function loadArticles() {
+  document.getElementById('list-wrap').innerHTML = '<div class="loading-wrap">加载中…</div>';
+  try {
+    const res = await sbFetch('GET', 'articles?select=*&order=saved_at.desc');
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.message || res.status);
+    }
+    allArticles = await res.json();
+    renderAll();
+  } catch(e) {
+    document.getElementById('list-wrap').innerHTML = `<div class="loading-wrap">加载失败：${e.message}</div>`;
+  }
+}
+
+// ────────────────────────────────────────────
+//  渲染
+// ────────────────────────────────────────────
+function renderAll() {
+  updateAccountFilter();
+  updateStats();
+  renderList();
+}
+
+function getFiltered() {
+  return allArticles.filter(a => {
+    if (currentFilter === 'unread' && a.is_read) return false;
+    if (currentFilter === 'starred' && !a.is_starred) return false;
+    if (currentAccount && a.account !== currentAccount) return false;
+    return true;
+  });
+}
+
+function renderList() {
+  const list = getFiltered();
+  const wrap = document.getElementById('list-wrap');
+  if (list.length === 0) {
+    const msg = currentFilter === 'all' && !currentAccount
+      ? '还没有收藏文章\n点右上角「收藏文章」开始添加吧'
+      : '没有符合条件的文章';
+    wrap.innerHTML = `<div class="empty-state"><div class="empty-icon">📭</div><p>${msg.replace('\n','<br>')}</p></div>`;
+    return;
+  }
+  wrap.innerHTML = list.map(a => articleCard(a)).join('');
+}
+
+function articleCard(a) {
+  const date = new Date(a.saved_at).toLocaleDateString('zh-CN', { month: 'numeric', day: 'numeric' });
+  const tags = (a.tags || []).map(t => `<span class="card-tag">${escHtml(t)}</span>`).join('');
+  return `
+  <div class="article-card ${a.is_read ? 'is-read' : ''}" id="card-${a.id}">
+    <div class="card-check ${a.is_read ? 'checked' : ''}" onclick="toggleRead('${a.id}')" title="${a.is_read ? '标为未读' : '标为已读'}"></div>
+    <div class="card-body">
+      <div class="card-meta">
+        <span class="card-account">${escHtml(a.account)}</span>
+        <span class="card-date">${date}</span>
+      </div>
+      <a class="card-title" href="${escHtml(a.url)}" target="_blank" rel="noopener">${escHtml(a.title)}</a>
+      ${a.summary ? `<div class="card-summary">${escHtml(a.summary)}</div>` : ''}
+      ${tags ? `<div class="card-tags">${tags}</div>` : ''}
+    </div>
+    <div class="card-actions">
+      <button class="action-btn ${a.is_starred ? 'starred' : ''}" onclick="toggleStar('${a.id}')" title="${a.is_starred ? '取消收藏' : '加星收藏'}">
+        ${a.is_starred ? '⭐' : '☆'}
+      </button>
+      <button class="action-btn delete" onclick="deleteArticle('${a.id}')" title="删除">🗑</button>
+    </div>
+  </div>`;
+}
+
+function escHtml(str) {
+  return String(str || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function updateStats() {
+  document.getElementById('stat-total').textContent   = allArticles.length;
+  document.getElementById('stat-unread').textContent  = allArticles.filter(a => !a.is_read).length;
+  document.getElementById('stat-starred').textContent = allArticles.filter(a => a.is_starred).length;
+}
+
+function updateAccountFilter() {
+  const accounts = [...new Set(allArticles.map(a => a.account).filter(Boolean))].sort();
+  const sel = document.getElementById('account-filter');
+  const cur = sel.value;
+  sel.innerHTML = '<option value="">所有公众号</option>' +
+    accounts.map(a => `<option value="${escHtml(a)}" ${a === cur ? 'selected' : ''}>${escHtml(a)}</option>`).join('');
+
+  // 同步 datalist
+  const dl = document.getElementById('account-datalist');
+  dl.innerHTML = accounts.map(a => `<option value="${escHtml(a)}">`).join('');
+}
+
+// ────────────────────────────────────────────
+//  筛选
+// ────────────────────────────────────────────
+function setFilter(type, btn) {
+  currentFilter = type;
+  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  renderList();
+}
+
+function filterByAccount() {
+  currentAccount = document.getElementById('account-filter').value;
+  renderList();
+}
+
+// ────────────────────────────────────────────
+//  已读 / 收藏切换
+// ────────────────────────────────────────────
+async function toggleRead(id) {
+  const a = allArticles.find(x => x.id === id);
+  if (!a) return;
+  const newVal = !a.is_read;
+  a.is_read = newVal;
+  renderAll();
+  const res = await sbFetch('PATCH', `articles?id=eq.${id}`, { is_read: newVal });
+  if (!res.ok) {
+    a.is_read = !newVal;
+    renderAll();
+    showToast('操作失败，请重试');
+  }
+}
+
+async function toggleStar(id) {
+  const a = allArticles.find(x => x.id === id);
+  if (!a) return;
+  const newVal = !a.is_starred;
+  a.is_starred = newVal;
+  renderAll();
+  const res = await sbFetch('PATCH', `articles?id=eq.${id}`, { is_starred: newVal });
+  if (!res.ok) {
+    a.is_starred = !newVal;
+    renderAll();
+    showToast('操作失败，请重试');
+  }
+}
+
+// ────────────────────────────────────────────
+//  删除
+// ────────────────────────────────────────────
+async function deleteArticle(id) {
+  const a = allArticles.find(x => x.id === id);
+  if (!a) return;
+  if (!confirm(`确定删除「${a.title}」？`)) return;
+  allArticles = allArticles.filter(x => x.id !== id);
+  renderAll();
+  const res = await sbFetch('DELETE', `articles?id=eq.${id}`);
+  if (!res.ok) {
+    showToast('删除失败，请重试');
+    await loadArticles();
+  } else {
+    showToast('已删除');
+  }
+}
+
+// ────────────────────────────────────────────
+//  添加弹窗
+// ────────────────────────────────────────────
+function openAddModal() {
+  ['input-url','input-title','input-account','input-summary','input-tags'].forEach(id => {
+    document.getElementById(id).value = '';
+  });
+  document.getElementById('add-modal').classList.add('show');
+  setTimeout(() => document.getElementById('input-url').focus(), 100);
+}
+
+function closeAddModal() {
+  document.getElementById('add-modal').classList.remove('show');
+}
+
+document.getElementById('add-modal').addEventListener('click', function(e) {
+  if (e.target === this) closeAddModal();
+});
+
+async function handleSubmit() {
+  const url     = document.getElementById('input-url').value.trim();
+  const title   = document.getElementById('input-title').value.trim();
+  const account = document.getElementById('input-account').value.trim();
+  const summary = document.getElementById('input-summary').value.trim();
+  const tagsRaw = document.getElementById('input-tags').value.trim();
+
+  if (!url)     { showToast('请填写文章链接'); return; }
+  if (!title)   { showToast('请填写文章标题'); return; }
+  if (!account) { showToast('请填写公众号名称'); return; }
+
+  const tags = tagsRaw ? tagsRaw.split(/[，,\s]+/).filter(Boolean) : [];
+
+  const btn = document.getElementById('btn-submit');
+  btn.disabled = true;
+  btn.textContent = '保存中…';
+
+  try {
+    const res = await sbFetch('POST', 'articles?on_conflict=user_id,url', {
+      user_id: getUserId(),
+      url, title, account, summary,
+      tags,
+      is_read: false,
+      is_starred: false,
+    });
+
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.message || res.status);
+    }
+
+    const data = await res.json();
+    const newArticle = Array.isArray(data) ? data[0] : data;
+    // 去重后插入头部
+    allArticles = [newArticle, ...allArticles.filter(a => a.id !== newArticle.id)];
+    renderAll();
+    closeAddModal();
+    showToast('已收藏 ✓');
+  } catch(e) {
+    showToast('保存失败：' + e.message);
+  } finally {
+    btn.disabled = false;
+    btn.textContent = '保存';
+  }
+}
+
+// ────────────────────────────────────────────
+//  Toast
+// ────────────────────────────────────────────
+let toastTimer;
+function showToast(msg) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => el.classList.remove('show'), 2500);
+}
+
+// ────────────────────────────────────────────
+//  启动
+// ────────────────────────────────────────────
+initPage();
+</script>
+</body>
+</html>
