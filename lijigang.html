@@ -1,0 +1,474 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>李继刚 · Prompt 卡片</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"/>
+  <style>
+    :root {
+      --bg: #f7f7f5;
+      --surface: #ffffff;
+      --surface-hover: #fafaf8;
+      --text: #1a1a1a;
+      --text-sub: #888;
+      --border: #e8e8e6;
+      --accent: #2d2d2d;
+      --tag-bg: #f0f0ee;
+      --star-color: #f5a623;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+    }
+
+    /* ── Header ── */
+    header {
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 56px 40px 40px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 24px;
+    }
+    .header-left .tag {
+      font-size: .7rem;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: var(--text-sub);
+      margin-bottom: 12px;
+    }
+    .header-left h1 {
+      font-size: 1.9rem;
+      font-weight: 700;
+      letter-spacing: -0.5px;
+      line-height: 1.1;
+    }
+    .header-left h1 span { color: var(--text-sub); }
+    .header-left p {
+      margin-top: 10px;
+      font-size: .88rem;
+      color: var(--text-sub);
+      line-height: 1.7;
+      max-width: 480px;
+    }
+    .header-right {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 6px;
+      flex-shrink: 0;
+    }
+    .total-stars {
+      font-size: .8rem;
+      color: var(--text-sub);
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+    .total-stars strong {
+      color: var(--text);
+      font-size: 1.1rem;
+    }
+    .update-time {
+      font-size: .75rem;
+      color: #aaa;
+    }
+    .header-back {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: .8rem;
+      color: var(--text-sub);
+      text-decoration: none;
+      padding: 6px 0;
+      transition: color .15s;
+    }
+    .header-back:hover { color: var(--text); }
+
+    .divider {
+      max-width: 820px;
+      margin: 0 auto 40px;
+      height: 1px;
+      background: var(--border);
+    }
+
+    /* ── Section titles ── */
+    .section {
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 0 40px 72px;
+    }
+    .section-title {
+      font-size: .7rem;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: var(--text-sub);
+      margin-bottom: 24px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .section-title::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: var(--border);
+    }
+
+    /* ── Prompt Cards ── */
+    .card-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+      gap: 1px;
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      overflow: hidden;
+      background: var(--border);
+    }
+    .prompt-card {
+      background: var(--surface);
+      padding: 24px 22px 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      text-decoration: none;
+      color: inherit;
+      transition: background .15s;
+      position: relative;
+    }
+    .prompt-card:hover { background: var(--surface-hover); }
+    .prompt-card:hover .card-arrow { opacity: 1; transform: translate(2px, -2px); }
+
+    .card-top {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 8px;
+    }
+    .card-name {
+      font-size: .95rem;
+      font-weight: 700;
+      color: var(--text);
+      line-height: 1.3;
+      flex: 1;
+    }
+    .card-stars {
+      font-size: .75rem;
+      color: var(--text-sub);
+      display: flex;
+      align-items: center;
+      gap: 3px;
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+    .card-stars svg { color: var(--star-color); }
+    .card-desc {
+      font-size: .8rem;
+      color: var(--text-sub);
+      line-height: 1.65;
+    }
+    .card-keywords {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 5px;
+      margin-top: 2px;
+    }
+    .kw {
+      font-size: .68rem;
+      padding: 3px 8px;
+      border: 1px solid var(--border);
+      border-radius: 50px;
+      color: var(--text-sub);
+      background: var(--tag-bg);
+    }
+    .card-arrow {
+      font-size: .85rem;
+      color: var(--text-sub);
+      opacity: 0;
+      transition: opacity .15s, transform .15s;
+      margin-top: 4px;
+    }
+
+    /* ── Update History ── */
+    .timeline {
+      border-left: 1px solid var(--border);
+      padding-left: 28px;
+      margin-left: 8px;
+    }
+    .timeline-item {
+      position: relative;
+      padding-bottom: 28px;
+    }
+    .timeline-item:last-child { padding-bottom: 0; }
+    .timeline-item::before {
+      content: '';
+      position: absolute;
+      left: -34px;
+      top: 5px;
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--border);
+      border: 2px solid var(--bg);
+    }
+    .timeline-item.active::before { background: var(--text); }
+    .timeline-date {
+      font-size: .72rem;
+      color: #aaa;
+      margin-bottom: 4px;
+      font-variant-numeric: tabular-nums;
+    }
+    .timeline-repo {
+      font-size: .82rem;
+      font-weight: 600;
+      color: var(--text);
+      margin-bottom: 3px;
+    }
+    .timeline-desc {
+      font-size: .78rem;
+      color: var(--text-sub);
+      line-height: 1.55;
+    }
+
+    /* ── Loading / Error states ── */
+    .loading { text-align: center; padding: 60px; color: var(--text-sub); font-size: .85rem; }
+    .error-msg { text-align: center; padding: 40px; color: #e55; font-size: .82rem; }
+
+    /* ── Footer ── */
+    footer {
+      text-align: center;
+      padding: 32px 24px;
+      font-size: .75rem;
+      color: #ccc;
+      border-top: 1px solid var(--border);
+    }
+
+    @media (max-width: 600px) {
+      header { padding: 36px 24px 24px; flex-direction: column; align-items: flex-start; }
+      .header-right { align-items: flex-start; }
+      .section { padding: 0 24px 60px; }
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="header-left">
+    <div class="tag">AI · Prompt · Claude Code Skill</div>
+    <h1>李继刚 <span>/</span> Prompt 卡片</h1>
+    <p>收录 lijingang 的 Claude Code Skills 与优质 Prompt，按 Star 数排序。GitHub 更新自动同步。</p>
+  </div>
+  <div class="header-right">
+    <a href="./index.html" class="header-back">← 返回主页</a>
+    <div class="total-stars">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="#f5a623"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+      <strong id="total-stars">—</strong> Stars
+    </div>
+    <div class="update-time" id="update-time">加载中…</div>
+  </div>
+</header>
+
+<div class="divider"></div>
+
+<!-- ── Prompt Cards ── -->
+<div class="section">
+  <div class="section-title">Prompt 卡片 · Cards</div>
+  <div id="cards-container">
+    <div class="loading">正在加载卡片数据…</div>
+  </div>
+</div>
+
+<!-- ── Update History ── -->
+<div class="section">
+  <div class="section-title">更新历史 · Updates</div>
+  <div id="timeline-container">
+    <div class="loading">正在加载更新记录…</div>
+  </div>
+</div>
+
+<footer>pecgi · 李继刚 Prompt 卡片 · 数据来源 GitHub</footer>
+
+<script>
+const GITHUB_USER = 'lijigang';
+const REPO_API = `https://api.github.com/users/${GITHUB_USER}/repos?sort=stargazers&per_page=30&type=owner`;
+const COMMITS_API = (repo) => `https://api.github.com/repos/${GITHUB_USER}/${repo}/commits?per_page=5`;
+
+const cardsContainer = document.getElementById('cards-container');
+const timelineContainer = document.getElementById('timeline-container');
+const totalStarsEl = document.getElementById('total-stars');
+const updateTimeEl = document.getElementById('update-time');
+
+// Repo metadata: description, keywords, URL
+const REPO_META = {
+  'ljg-skills': {
+    desc: 'Claude Code Skills 合集，包含所有 ljg-* 技能的核心描述与使用说明。Claude Code 用户的必备技能库。',
+    keywords: ['合集', 'Claude Code', 'Skills'],
+    url: 'https://github.com/lijigang/ljg-skills'
+  },
+  'ljg-skill-xray-paper': {
+    desc: '用万有引力公式解构学术论文，提炼"餐巾纸公式"，生成可视化拓扑图。论文阅读的降维工具。',
+    keywords: ['论文', '学术', '解构', '公式'],
+    url: 'https://github.com/lijigang/ljg-skill-xray-paper'
+  },
+  'ljg-skill-explain-words': {
+    desc: '深度解构英文单词，生成博物馆级 HTML 卡片。词源·语义·用例·文化语境，全链路拆解。',
+    keywords: ['单词', '词源', '英语', '卡片'],
+    url: 'https://github.com/lijigang/ljg-skill-explain-words'
+  },
+  'ljg-skill-roundtable': {
+    desc: '以"求真"为目标的多人物辩证对话框架。主持人引导，代表真实思想的人物交锋，输出知识网络。',
+    keywords: ['圆桌', '辩证', '对话', '知识网络'],
+    url: 'https://github.com/lijigang/ljg-skill-roundtable'
+  },
+  'ljg-skill-paper': {
+    desc: '用原子管线解构学术论文，输出连贯的认知旅程。三轮认知压缩，提取书籍可学习结构。',
+    keywords: ['论文', '拆书', '认知', '管线'],
+    url: 'https://github.com/lijigang/ljg-skill-paper'
+  },
+  'ljg-skill-the-one': {
+    desc: '用第一性原理提炼极简公式，生成可视化 HTML 卡片。解构→升维→形式化，找到本质边界。',
+    keywords: ['本质', '公式', '第一性原理', 'Bento Grid'],
+    url: 'https://github.com/lijigang/ljg-skill-the-one'
+  },
+  'ljg-title': {
+    desc: '标题锻造机，给内容出标题。5 种策略：直击·问句·悬疑·具象·自由，按恰当×清晰×戏剧性排序。',
+    keywords: ['标题', '写作', '文案'],
+    url: 'https://github.com/lijigang/ljg-title'
+  },
+  'ljg-cards': {
+    desc: '文字变精美 PNG 阅读卡片。支持长图模式和多卡模式，CJK 优先排版，语义化结构自动映射。',
+    keywords: ['卡片', 'PNG', '阅读', '排版'],
+    url: 'https://github.com/lijigang/ljg-cards'
+  },
+  'ljg-skill-xray-book': {
+    desc: '三轮认知压缩提取书籍可学习结构。从表象剥离噪音，识别核心矛盾，输出可操作的结构化知识。',
+    keywords: ['拆书', '书籍', '认知压缩', '结构化'],
+    url: 'https://github.com/lijigang/ljg-skill-xray-book'
+  },
+  'ljg-skill-skill-map': {
+    desc: '实时扫描 ljg-* skill 并绘制 CogOS 层级拓扑图。技能之间的依赖关系一目了然。',
+    keywords: ['技能地图', '拓扑', '可视化'],
+    url: 'https://github.com/lijigang/ljg-skill-skill-map'
+  },
+  'ljg-infograph': {
+    desc: '将文本自动结构化为精美 PNG 信息图。内容解析 + 视觉设计，一键生成可分享的视觉笔记。',
+    keywords: ['信息图', '可视化', 'PNG'],
+    url: 'https://github.com/lijigang/ljg-infograph'
+  },
+  'ljg-skill-fetch': {
+    desc: '把任意 URL 或本地文件转换为干净的本地 Markdown。抓取刀，保留结构，去除噪音。',
+    keywords: ['抓取', 'Markdown', '内容提取'],
+    url: 'https://github.com/lijigang/ljg-skill-fetch'
+  },
+  'ljg-skill-xray-skill': {
+    desc: '用六刀解剖术+三才递归对任意技能进行系统解剖。找到技能的元结构，识别核心能力边界。',
+    keywords: ['技能解剖', '元结构', '递归'],
+    url: 'https://github.com/lijigang/ljg-skill-xray-skill'
+  },
+  'ljg-skill-calendar': {
+    desc: '通过 AppleScript 读写 macOS 原生日历。创建事件、查询日程、设置提醒，Claude Code 直接调用。',
+    keywords: ['日历', 'macOS', 'AppleScript', '自动化'],
+    url: 'https://github.com/lijigang/ljg-skill-calendar'
+  },
+  'write-prompt': {
+    desc: '同步公众号 Write Prompt 发布的优质 Prompt。同源记录，方便查阅。',
+    keywords: ['公众号', '写作', 'Prompt'],
+    url: 'https://github.com/lijigang/write-prompt'
+  },
+  'prompts': {
+    desc: '结构化的 Prompts 合集，用于各种大语言模型。基础 Prompt 库，持续更新。',
+    keywords: ['Prompt', '合集', 'LLM'],
+    url: 'https://github.com/lijigang/prompts'
+  },
+  'ljg-skill-xray-prompt': {
+    desc: '用万有引力公式解构 Prompt 结构，ASCII 拓扑可视化。理解 Prompt 的深层逻辑。',
+    keywords: ['Prompt 解构', '可视化', '拓扑'],
+    url: 'https://github.com/lijigang/ljg-skill-xray-prompt'
+  }
+};
+
+function formatDate(isoStr) {
+  const d = new Date(isoStr);
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+}
+
+function timeAgo(isoStr) {
+  const now = Date.now();
+  const then = new Date(isoStr).getTime();
+  const diff = now - then;
+  const days = Math.floor(diff / 86400000);
+  if (days === 0) return '今天';
+  if (days === 1) return '昨天';
+  if (days < 30) return `${days} 天前`;
+  const months = Math.floor(days / 30);
+  if (months < 12) return `${months} 个月前`;
+  return `${Math.floor(months/12)} 年前`;
+}
+
+function renderCards(repos) {
+  let totalStars = 0;
+  const html = repos.map(repo => {
+    const meta = REPO_META[repo.name] || {};
+    totalStars += repo.stargazers_count || 0;
+    const desc = meta.desc || repo.description || '暂无描述';
+    const keywords = meta.keywords || [];
+    const url = meta.url || repo.html_url;
+    return `
+      <a class="prompt-card" href="${url}" target="_blank" rel="noopener">
+        <div class="card-top">
+          <div class="card-name">${repo.name}</div>
+          <div class="card-stars">
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+            ${repo.stargazers_count.toLocaleString()}
+          </div>
+        </div>
+        <div class="card-desc">${desc}</div>
+        ${keywords.length ? `
+        <div class="card-keywords">
+          ${keywords.map(k => `<span class="kw">${k}</span>`).join('')}
+        </div>` : ''}
+        <div class="card-arrow">↗</div>
+      </a>`;
+  }).join('');
+
+  cardsContainer.innerHTML = `<div class="card-grid">${html}</div>`;
+  totalStarsEl.textContent = totalStars.toLocaleString();
+}
+
+function renderTimeline(repos) {
+  // Sort by pushed_at, take top 8
+  const sorted = [...repos].sort((a,b) => new Date(b.pushed_at) - new Date(a.pushed_at)).slice(0, 10);
+
+  const html = sorted.map((repo, i) => `
+    <div class="timeline-item${i === 0 ? ' active' : ''}">
+      <div class="timeline-date">${timeAgo(repo.pushed_at)} · ${formatDate(repo.pushed_at)}</div>
+      <div class="timeline-repo">${repo.name}</div>
+      <div class="timeline-desc">${REPO_META[repo.name]?.desc || repo.description || '—'}</div>
+    </div>`).join('');
+
+  timelineContainer.innerHTML = `<div class="timeline">${html}</div>`;
+  updateTimeEl.textContent = `更新于 ${formatDate(sorted[0]?.pushed_at)}`;
+}
+
+async function load() {
+  try {
+    const resp = await fetch(REPO_API);
+    if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+    const repos = await resp.json();
+    renderCards(repos);
+    renderTimeline(repos);
+  } catch(e) {
+    cardsContainer.innerHTML = `<div class="error-msg">加载失败：${e.message}。请检查网络或代理设置。</div>`;
+    timelineContainer.innerHTML = `<div class="error-msg">加载失败：${e.message}</div>`;
+  }
+}
+
+load();
+</script>
+</body>
+</html>
