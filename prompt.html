@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Prompt 卡片 · GitHub 创作者合集</title>
+  <style>
+    :root {
+      --bg: #f7f7f5;
+      --surface: #ffffff;
+      --surface-hover: #fafaf8;
+      --text: #1a1a1a;
+      --text-sub: #888;
+      --border: #e8e8e6;
+      --tag-bg: #f0f0ee;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+    }
+
+    /* ── Header ── */
+    header {
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 56px 40px 40px;
+    }
+    .header-top {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 24px;
+    }
+    .tag {
+      font-size: .7rem;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: var(--text-sub);
+      margin-bottom: 12px;
+    }
+    h1 {
+      font-size: 1.9rem;
+      font-weight: 700;
+      letter-spacing: -0.5px;
+      line-height: 1.1;
+    }
+    h1 span { color: var(--text-sub); }
+    .header-desc {
+      margin-top: 12px;
+      font-size: .88rem;
+      color: var(--text-sub);
+      line-height: 1.7;
+      max-width: 480px;
+    }
+    .header-back {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: .8rem;
+      color: var(--text-sub);
+      text-decoration: none;
+      padding: 6px 0;
+      transition: color .15s;
+      flex-shrink: 0;
+    }
+    .header-back:hover { color: var(--text); }
+
+    .divider {
+      max-width: 820px;
+      margin: 40px auto;
+      height: 1px;
+      background: var(--border);
+    }
+
+    /* ── Creator Grid ── */
+    .section {
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 0 40px 72px;
+    }
+    .section-title {
+      font-size: .7rem;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: var(--text-sub);
+      margin-bottom: 28px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .section-title::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: var(--border);
+    }
+
+    .creator-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 1px;
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      overflow: hidden;
+      background: var(--border);
+    }
+    .creator-card {
+      background: var(--surface);
+      padding: 28px 26px 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      text-decoration: none;
+      color: inherit;
+      transition: background .15s;
+      position: relative;
+    }
+    .creator-card:hover { background: var(--surface-hover); }
+    .creator-card:hover .card-arrow { opacity: 1; transform: translate(2px, -2px); }
+
+    .card-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .avatar {
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      border: 1px solid var(--border);
+      object-fit: cover;
+      flex-shrink: 0;
+      background: var(--tag-bg);
+    }
+    .card-names {
+      flex: 1;
+      min-width: 0;
+    }
+    .card-nickname {
+      font-size: 1rem;
+      font-weight: 700;
+      color: var(--text);
+      line-height: 1.2;
+    }
+    .card-github {
+      font-size: .75rem;
+      color: var(--text-sub);
+      margin-top: 3px;
+    }
+    .card-stats {
+      display: flex;
+      gap: 16px;
+      font-size: .78rem;
+      color: var(--text-sub);
+    }
+    .stat strong { color: var(--text); font-weight: 600; margin-right: 3px; }
+    .card-desc {
+      font-size: .8rem;
+      color: var(--text-sub);
+      line-height: 1.65;
+    }
+    .card-tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 5px;
+    }
+    .tag-chip {
+      font-size: .68rem;
+      padding: 3px 8px;
+      border: 1px solid var(--border);
+      border-radius: 50px;
+      color: var(--text-sub);
+      background: var(--tag-bg);
+    }
+    .card-arrow {
+      font-size: .85rem;
+      color: var(--text-sub);
+      opacity: 0;
+      transition: opacity .15s, transform .15s;
+      margin-top: 2px;
+    }
+
+    .footer-note {
+      text-align: center;
+      padding: 32px 24px;
+      font-size: .75rem;
+      color: #ccc;
+      border-top: 1px solid var(--border);
+    }
+
+    @media (max-width: 600px) {
+      header { padding: 36px 24px 24px; }
+      .header-top { flex-direction: column; }
+      .section { padding: 0 24px 60px; }
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="header-top">
+    <div>
+      <div class="tag">AI · Prompt · GitHub 创作者</div>
+      <h1>Prompt <span>·</span> 卡片</h1>
+      <p class="header-desc">收录优质 GitHub 创作者的 AI Prompt 与工具，按 Star 数排序展示。支持 GitHub 更新自动同步。</p>
+    </div>
+    <a href="./index.html" class="header-back">← 返回主页</a>
+  </div>
+</header>
+
+<div class="divider"></div>
+
+<div class="section">
+  <div class="section-title">创作者 · Creators</div>
+  <div class="creator-grid">
+
+    <!-- 李继刚 -->
+    <a class="creator-card" href="./lijigang.html">
+      <div class="card-header">
+        <img class="avatar" src="https://github.com/lijigang.png?size=88" alt="李继刚" onerror="this.src='data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 44 44%22><rect width=%2244%22 height=%2244%22 fill=%22%23f0f0ee%22/><text x=%2222%22 y=%2228%22 text-anchor=%22middle%22 font-size=%2220%22>🧠</text></svg>'">
+        <div class="card-names">
+          <div class="card-nickname">李继刚</div>
+          <div class="card-github">@lijigang</div>
+        </div>
+      </div>
+      <div class="card-stats">
+        <span class="stat"><strong>17</strong> repos</span>
+        <span class="stat"><strong>10k+</strong> ★</span>
+      </div>
+      <div class="card-desc">Claude Code Skills 与优质 Prompt 合集，涵盖论文解构、单词学习、圆桌讨论、卡片生成等多个领域。</div>
+      <div class="card-tags">
+        <span class="tag-chip">Claude Code</span>
+        <span class="tag-chip">Prompt</span>
+        <span class="tag-chip">Skills</span>
+      </div>
+      <div class="card-arrow">↗</div>
+    </a>
+
+    <!-- 歸藏 -->
+    <a class="creator-card" href="./guizang.html">
+      <div class="card-header">
+        <img class="avatar" src="https://github.com/op7418.png?size=88" alt="歸藏" onerror="this.src='data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 44 44%22><rect width=%2244%22 height=%2244%22 fill=%22%23f0f0ee%22/><text x=%2222%22 y=%2228%22 text-anchor=%22middle%22 font-size=%2220%22>🧠</text></svg>'">
+        <div class="card-names">
+          <div class="card-nickname">歸藏</div>
+          <div class="card-github">@op7418</div>
+        </div>
+      </div>
+      <div class="card-stats">
+        <span class="stat"><strong>24</strong> repos</span>
+        <span class="stat"><strong>900+</strong> ★</span>
+      </div>
+      <div class="card-desc">优质 Prompt 储存库与 Claude Code Skills 合集，包含杂志风 PPT 生成、文档插画化、视频剪辑等工具。</div>
+      <div class="card-tags">
+        <span class="tag-chip">Claude Code</span>
+        <span class="tag-chip">Prompt</span>
+        <span class="tag-chip">PPT</span>
+      </div>
+      <div class="card-arrow">↗</div>
+    </a>
+
+  </div>
+</div>
+
+<div class="footer-note">pecgi · Prompt 卡片 · 数据来源 GitHub</div>
+
+</body>
+</html>
