@@ -302,10 +302,33 @@ const totalStarsEl = document.getElementById('total-stars');
 const updateTimeEl = document.getElementById('update-time');
 
 // Repo metadata: description, keywords, URL
-// 手动补充描述，优先级高于 GitHub API 返回的 description
+// 手动补充中文描述，优先级高于 GitHub API 返回的 description
 const REPO_META = {
-  // 格式: 'repo-name': { desc: '描述', keywords: ['标签'], url: '链接' }
-  // GitHub API 数据会自动填充 star 数，此处可选择性补充中文描述
+  'guizang-s-prompt': {
+    desc: '这里是歸藏的提示词储存库，存放归藏撰写的所有 AI 模型提示词，持续更新。',
+    keywords: ['Prompt', '提示词', '合集'],
+    url: 'https://github.com/op7418/guizang-s-prompt'
+  },
+  'guizang-ppt-skill': {
+    desc: 'Claude Code Skill，将 Prompt 转换为横向滑动杂志风 HTML 演示文稿。10 种布局、5 种主题、WebGL 背景，单文件输出。',
+    keywords: ['Claude Code', 'PPT', '演示', '杂志风'],
+    url: 'https://github.com/op7418/guizang-ppt-skill'
+  },
+  'Document-illustrator-skill': {
+    desc: 'Claude Code Skill，将文档转化为插画风格的视觉呈现，生成可分享的单文件 HTML。',
+    keywords: ['Claude Code', '文档', '插画', '可视化'],
+    url: 'https://github.com/op7418/Document-illustrator-skill'
+  },
+  'CodePilot': {
+    desc: 'AI 代码领航助手，辅助代码审查与重构建议，提升开发效率。',
+    keywords: ['代码', 'AI', '辅助'],
+    url: 'https://github.com/op7418/CodePilot'
+  },
+  'Youtube-clipper-skill': {
+    desc: 'Claude Code Skill，一键提取 YouTube 视频精华片段，自动生成字幕与时间戳。',
+    keywords: ['Claude Code', 'YouTube', '视频', '剪辑'],
+    url: 'https://github.com/op7418/Youtube-clipper-skill'
+  }
 };
 
 function formatDate(isoStr) {
