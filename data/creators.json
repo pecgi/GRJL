@@ -1,0 +1,28 @@
+{
+  "title": "优秀 GitHub 创作者",
+  "subtitle": "优秀 Prompt 创作者合集",
+  "description": "收录优质 Prompt 创作者的 GitHub 项目，按 Star 数排序。点击进入创作者主页。",
+  "generated_at": "2026-05-08",
+  "creators": [
+    {
+      "name": "李继刚",
+      "github": "lijigang",
+      "data_url": "./data/lijigang.json",
+      "page_url": "./lijigang.html",
+      "tags": ["Claude Code", "Prompt", "Skills", "AI"],
+      "repo_count": 17,
+      "description": "Claude Code Skills 体系创始人，涵盖论文解构、单词学习、圆桌辩论、知识卡片等多个领域的深度 AI 工具。",
+      "highlights": ["ljg-skills（技能合集）", "ljg-skill-paper（论文阅读）", "ljg-cards（文字卡片）", "ljg-skill-roundtable（圆桌对话）"]
+    },
+    {
+      "name": "歸藏",
+      "github": "op7418",
+      "data_url": "./data/guizang.json",
+      "page_url": "./guizang.html",
+      "tags": ["Claude Code", "Prompt", "PPT", "文档"],
+      "repo_count": 5,
+      "description": "专注于 AI 演示与文档可视化的 Claude Code Skill 创作者，作品涵盖杂志风 PPT、文档插画化、视频精华剪辑等方向。",
+      "highlights": ["guizang-ppt-skill（杂志风 PPT）", "Document-illustrator-skill（文档插画）", "Youtube-clipper-skill（视频剪辑）", "guizang-s-prompt（提示词合集）"]
+    }
+  ]
+}

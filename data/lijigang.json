@@ -1,0 +1,114 @@
+{
+  "creator": "李继刚",
+  "github": "lijigang",
+  "bio": "AI · Prompt · Claude Code Skill",
+  "page_title": "李继刚 · Prompt 卡片",
+  "page_desc": "收录 lijingang 的 Claude Code Skills 与优质 Prompt，按 Star 数排序。GitHub 更新自动同步。",
+  "avatar_url": "https://avatars.githubusercontent.com/u/1234567?size=200",
+  "data_url": "./data/lijigang.json",
+  "generated_at": "2026-05-08",
+  "repos": [
+    {
+      "name": "ljg-skills",
+      "desc": "Claude Code Skills 合集，包含所有 ljg-* 技能的核心描述与使用说明。Claude Code 用户的必备技能库。",
+      "keywords": ["合集", "Claude Code", "Skills"],
+      "url": "https://github.com/lijigang/ljg-skills"
+    },
+    {
+      "name": "ljg-skill-xray-paper",
+      "desc": "用万有引力公式解构学术论文，提炼"餐巾纸公式"，生成可视化拓扑图。论文阅读的降维工具。",
+      "keywords": ["论文", "学术", "解构", "公式"],
+      "url": "https://github.com/lijigang/ljg-skill-xray-paper"
+    },
+    {
+      "name": "ljg-skill-explain-words",
+      "desc": "深度解构英文单词，生成博物馆级 HTML 卡片。词源·语义·用例·文化语境，全链路拆解。",
+      "keywords": ["单词", "词源", "英语", "卡片"],
+      "url": "https://github.com/lijigang/ljg-skill-explain-words"
+    },
+    {
+      "name": "ljg-skill-roundtable",
+      "desc": "以"求真"为目标的多人物辩证对话框架。主持人引导，代表真实思想的人物交锋，输出知识网络。",
+      "keywords": ["圆桌", "辩证", "对话", "知识网络"],
+      "url": "https://github.com/lijigang/ljg-skill-roundtable"
+    },
+    {
+      "name": "ljg-skill-paper",
+      "desc": "用原子管线解构学术论文，输出连贯的认知旅程。三轮认知压缩，提取书籍可学习结构。",
+      "keywords": ["论文", "拆书", "认知", "管线"],
+      "url": "https://github.com/lijigang/ljg-skill-paper"
+    },
+    {
+      "name": "ljg-skill-the-one",
+      "desc": "用第一性原理提炼极简公式，生成可视化 HTML 卡片。解构→升维→形式化，找到本质边界。",
+      "keywords": ["本质", "公式", "第一性原理", "Bento Grid"],
+      "url": "https://github.com/lijigang/ljg-skill-the-one"
+    },
+    {
+      "name": "ljg-title",
+      "desc": "标题锻造机，给内容出标题。5 种策略：直击·问句·悬疑·具象·自由，按恰当×清晰×戏剧性排序。",
+      "keywords": ["标题", "写作", "文案"],
+      "url": "https://github.com/lijigang/ljg-title"
+    },
+    {
+      "name": "ljg-cards",
+      "desc": "文字变精美 PNG 阅读卡片。支持长图模式和多卡模式，CJK 优先排版，语义化结构自动映射。",
+      "keywords": ["卡片", "PNG", "阅读", "排版"],
+      "url": "https://github.com/lijigang/ljg-cards"
+    },
+    {
+      "name": "ljg-skill-xray-book",
+      "desc": "三轮认知压缩提取书籍可学习结构。从表象剥离噪音，识别核心矛盾，输出可操作的结构化知识。",
+      "keywords": ["拆书", "书籍", "认知压缩", "结构化"],
+      "url": "https://github.com/lijigang/ljg-skill-xray-book"
+    },
+    {
+      "name": "ljg-skill-skill-map",
+      "desc": "实时扫描 ljg-* skill 并绘制 CogOS 层级拓扑图。技能之间的依赖关系一目了然。",
+      "keywords": ["技能地图", "拓扑", "可视化"],
+      "url": "https://github.com/lijigang/ljg-skill-skill-map"
+    },
+    {
+      "name": "ljg-infograph",
+      "desc": "将文本自动结构化为精美 PNG 信息图。内容解析 + 视觉设计，一键生成可分享的视觉笔记。",
+      "keywords": ["信息图", "可视化", "PNG"],
+      "url": "https://github.com/lijigang/ljg-infograph"
+    },
+    {
+      "name": "ljg-skill-fetch",
+      "desc": "把任意 URL 或本地文件转换为干净的本地 Markdown。抓取刀，保留结构，去除噪音。",
+      "keywords": ["抓取", "Markdown", "内容提取"],
+      "url": "https://github.com/lijigang/ljg-skill-fetch"
+    },
+    {
+      "name": "ljg-skill-xray-skill",
+      "desc": "用六刀解剖术+三才递归对任意技能进行系统解剖。找到技能的元结构，识别核心能力边界。",
+      "keywords": ["技能解剖", "元结构", "递归"],
+      "url": "https://github.com/lijigang/ljg-skill-xray-skill"
+    },
+    {
+      "name": "ljg-skill-calendar",
+      "desc": "通过 AppleScript 读写 macOS 原生日历。创建事件、查询日程、设置提醒，Claude Code 直接调用。",
+      "keywords": ["日历", "macOS", "AppleScript", "自动化"],
+      "url": "https://github.com/lijigang/ljg-skill-calendar"
+    },
+    {
+      "name": "write-prompt",
+      "desc": "同步公众号 Write Prompt 发布的优质 Prompt。同源记录，方便查阅。",
+      "keywords": ["公众号", "写作", "Prompt"],
+      "url": "https://github.com/lijigang/write-prompt"
+    },
+    {
+      "name": "prompts",
+      "desc": "结构化的 Prompts 合集，用于各种大语言模型。基础 Prompt 库，持续更新。",
+      "keywords": ["Prompt", "合集", "LLM"],
+      "url": "https://github.com/lijigang/prompts"
+    },
+    {
+      "name": "ljg-skill-xray-prompt",
+      "desc": "用万有引力公式解构 Prompt 结构，ASCII 拓扑可视化。理解 Prompt 的深层逻辑。",
+      "keywords": ["Prompt 解构", "可视化", "拓扑"],
+      "url": "https://github.com/lijigang/ljg-skill-xray-prompt"
+    }
+  ]
+}

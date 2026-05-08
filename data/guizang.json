@@ -1,0 +1,42 @@
+{
+  "creator": "歸藏",
+  "github": "op7418",
+  "bio": "AI · Prompt · Claude Code Skill",
+  "page_title": "歸藏 · Prompt 卡片",
+  "page_desc": "收录归藏的优质 Prompt 与 AI 工具，按 Star 数排序。GitHub 更新自动同步。",
+  "avatar_url": "https://avatars.githubusercontent.com/u/764?size=200",
+  "data_url": "./data/guizang.json",
+  "generated_at": "2026-05-08",
+  "repos": [
+    {
+      "name": "guizang-s-prompt",
+      "desc": "这里是歸藏的提示词储存库，存放归藏撰写的所有 AI 模型提示词，持续更新。",
+      "keywords": ["Prompt", "提示词", "合集"],
+      "url": "https://github.com/op7418/guizang-s-prompt"
+    },
+    {
+      "name": "guizang-ppt-skill",
+      "desc": "Claude Code Skill，将 Prompt 转换为横向滑动杂志风 HTML 演示文稿。10 种布局、5 种主题、WebGL 背景，单文件输出。",
+      "keywords": ["Claude Code", "PPT", "演示", "杂志风"],
+      "url": "https://github.com/op7418/guizang-ppt-skill"
+    },
+    {
+      "name": "Document-illustrator-skill",
+      "desc": "Claude Code Skill，将文档转化为插画风格的视觉呈现，生成可分享的单文件 HTML。",
+      "keywords": ["Claude Code", "文档", "插画", "可视化"],
+      "url": "https://github.com/op7418/Document-illustrator-skill"
+    },
+    {
+      "name": "CodePilot",
+      "desc": "AI 代码领航助手，辅助代码审查与重构建议，提升开发效率。",
+      "keywords": ["代码", "AI", "辅助"],
+      "url": "https://github.com/op7418/CodePilot"
+    },
+    {
+      "name": "Youtube-clipper-skill",
+      "desc": "Claude Code Skill，一键提取 YouTube 视频精华片段，自动生成字幕与时间戳。",
+      "keywords": ["Claude Code", "YouTube", "视频", "剪辑"],
+      "url": "https://github.com/op7418/Youtube-clipper-skill"
+    }
+  ]
+}
