@@ -1,0 +1,831 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>资产记录 · 生活数字记录</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
+  <style>
+    :root {
+      --bg: #f5f6fa;
+      --surface: #ffffff;
+      --primary: #5c6bc0;
+      --primary-light: #e8eaf6;
+      --primary-dark: #3949ab;
+      --text: #2d2d2d;
+      --text-sub: #777;
+      --border: #e0e0e0;
+      --success: #43a047;
+      --warn: #fb8c00;
+      --danger: #e53935;
+      --radius: 14px;
+      --shadow: 0 2px 16px rgba(0,0,0,0.07);
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+    }
+
+    /* ── Auth Screen ── */
+    #auth-screen {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    }
+    .auth-card {
+      background: #fff;
+      border-radius: 24px;
+      padding: 40px 36px;
+      width: 100%;
+      max-width: 400px;
+      box-shadow: 0 20px 60px rgba(0,0,0,.2);
+      text-align: center;
+    }
+    .auth-card .logo { font-size: 2.8rem; margin-bottom: 8px; }
+    .auth-card h1 { font-size: 1.5rem; font-weight: 700; margin-bottom: 6px; }
+    .auth-card .subtitle { color: var(--text-sub); font-size: .9rem; margin-bottom: 32px; }
+    .btn-github {
+      width: 100%; padding: 13px;
+      border: 1.5px solid #e0e0e0; border-radius: 10px;
+      background: #fff; font-size: .95rem; font-weight: 500;
+      cursor: pointer; display: flex; align-items: center;
+      justify-content: center; gap: 10px;
+      transition: border-color .15s, background .15s;
+    }
+    .btn-github:hover { border-color: #333; background: #fafafa; }
+
+    /* ── Main App ── */
+    #app-screen { display: none; }
+
+    /* ── Top bar ── */
+    .topbar {
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      padding: 0 28px;
+      height: 56px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+    .topbar-left { display: flex; align-items: center; gap: 12px; }
+    .topbar-back {
+      display: inline-flex; align-items: center; gap: 5px;
+      font-size: .82rem; color: var(--text-sub);
+      text-decoration: none; padding: 5px 0;
+      transition: color .15s;
+    }
+    .topbar-back:hover { color: var(--text); }
+    .topbar-title { font-size: 1rem; font-weight: 600; color: var(--text); }
+    .topbar-right { display: flex; align-items: center; gap: 10px; }
+    .user-avatar {
+      width: 30px; height: 30px; border-radius: 50%;
+      background: var(--primary); color: #fff;
+      display: flex; align-items: center; justify-content: center;
+      font-size: .8rem; font-weight: 600; overflow: hidden;
+    }
+    .user-avatar img { width: 100%; height: 100%; object-fit: cover; }
+
+    /* ── Page Layout ── */
+    .page { max-width: 1000px; margin: 0 auto; padding: 28px 24px 80px; }
+
+    /* ── Net Worth Banner ── */
+    .networth-banner {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      border-radius: 20px;
+      padding: 32px 36px;
+      color: #fff;
+      margin-bottom: 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 16px;
+    }
+    .networth-label { font-size: .85rem; opacity: .8; margin-bottom: 6px; }
+    .networth-amount { font-size: 2.4rem; font-weight: 700; letter-spacing: -1px; line-height: 1; }
+    .networth-change {
+      display: inline-flex; align-items: center; gap: 5px;
+      font-size: .82rem; opacity: .85; margin-top: 6px;
+    }
+    .networth-change.up { color: #a5f3c0; }
+    .networth-change.down { color: #fca5a5; }
+    .networth-right { display: flex; gap: 10px; flex-wrap: wrap; }
+    .btn-snapshot {
+      padding: 10px 20px;
+      background: rgba(255,255,255,.18);
+      border: 1.5px solid rgba(255,255,255,.35);
+      border-radius: 10px;
+      color: #fff; font-size: .88rem; font-weight: 500;
+      cursor: pointer; transition: background .15s;
+    }
+    .btn-snapshot:hover { background: rgba(255,255,255,.28); }
+    .btn-add-asset {
+      padding: 10px 20px;
+      background: #fff;
+      border: none;
+      border-radius: 10px;
+      color: var(--primary-dark); font-size: .88rem; font-weight: 600;
+      cursor: pointer; transition: opacity .15s;
+    }
+    .btn-add-asset:hover { opacity: .9; }
+
+    /* ── Grid ── */
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 24px; }
+    .grid-full { margin-bottom: 24px; }
+
+    @media (max-width: 680px) {
+      .grid-2 { grid-template-columns: 1fr; }
+      .networth-banner { flex-direction: column; }
+      .networth-amount { font-size: 1.9rem; }
+    }
+
+    /* ── Card ── */
+    .card {
+      background: var(--surface);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+    .card-header {
+      padding: 18px 22px 0;
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .card-title {
+      font-size: .78rem; letter-spacing: 1.5px;
+      text-transform: uppercase; color: var(--text-sub);
+      font-weight: 600;
+    }
+    .card-body { padding: 16px 22px 22px; }
+
+    /* ── Category Summary ── */
+    .category-list { display: flex; flex-direction: column; gap: 12px; }
+    .category-row {
+      display: flex; align-items: center; gap: 12px;
+    }
+    .cat-dot {
+      width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0;
+    }
+    .cat-name { flex: 1; font-size: .9rem; color: var(--text); }
+    .cat-amount { font-size: .9rem; font-weight: 600; color: var(--text); }
+    .cat-pct { font-size: .78rem; color: var(--text-sub); min-width: 38px; text-align: right; }
+    .cat-bar-track {
+      width: 100%; height: 4px; background: var(--bg); border-radius: 9999px;
+      margin-top: 4px; overflow: hidden;
+    }
+    .cat-bar-fill { height: 100%; border-radius: 9999px; transition: width .5s; }
+
+    /* ── Asset List ── */
+    .asset-list { display: flex; flex-direction: column; gap: 0; }
+    .asset-row {
+      display: flex; align-items: center; gap: 14px;
+      padding: 13px 0;
+      border-bottom: 1px solid var(--border);
+      cursor: pointer;
+      transition: background .1s;
+    }
+    .asset-row:last-child { border-bottom: none; }
+    .asset-row:hover { background: #f9f9f9; margin: 0 -22px; padding-left: 22px; padding-right: 22px; }
+    .asset-emoji {
+      width: 38px; height: 38px;
+      background: var(--bg); border-radius: 10px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.2rem; flex-shrink: 0;
+    }
+    .asset-info { flex: 1; min-width: 0; }
+    .asset-name { font-size: .92rem; font-weight: 500; }
+    .asset-cat { font-size: .76rem; color: var(--text-sub); margin-top: 2px; }
+    .asset-amount { font-size: .95rem; font-weight: 600; color: var(--text); text-align: right; }
+    .asset-note { font-size: .75rem; color: var(--text-sub); margin-top: 2px; text-align: right; }
+    .asset-actions { display: flex; gap: 6px; }
+    .icon-btn {
+      width: 28px; height: 28px;
+      background: transparent; border: none;
+      cursor: pointer; border-radius: 6px;
+      display: flex; align-items: center; justify-content: center;
+      color: var(--text-sub); font-size: .85rem;
+      transition: background .1s, color .1s;
+    }
+    .icon-btn:hover { background: var(--bg); color: var(--text); }
+    .icon-btn.danger:hover { background: #fdecea; color: var(--danger); }
+
+    /* ── Chart ── */
+    .chart-wrap { position: relative; height: 200px; }
+
+    /* ── History Table ── */
+    .history-table { width: 100%; border-collapse: collapse; }
+    .history-table th, .history-table td {
+      text-align: left; padding: 10px 14px;
+      font-size: .83rem; border-bottom: 1px solid var(--border);
+    }
+    .history-table th { color: var(--text-sub); font-weight: 500; }
+    .history-table td { color: var(--text); }
+    .history-table tr:last-child td { border-bottom: none; }
+    .change-up { color: var(--success); }
+    .change-down { color: var(--danger); }
+    .change-zero { color: var(--text-sub); }
+
+    /* ── Modal ── */
+    .overlay {
+      display: none; position: fixed; inset: 0;
+      background: rgba(0,0,0,.4); z-index: 200;
+      align-items: center; justify-content: center; padding: 20px;
+    }
+    .overlay.open { display: flex; }
+    .modal {
+      background: #fff; border-radius: 20px;
+      width: 100%; max-width: 480px;
+      padding: 28px 28px 24px;
+      box-shadow: 0 20px 60px rgba(0,0,0,.25);
+      animation: fadeUp .18s ease;
+    }
+    @keyframes fadeUp { from { opacity:0; transform:translateY(16px); } to { opacity:1; transform:translateY(0); } }
+    .modal-title { font-size: 1.1rem; font-weight: 700; margin-bottom: 20px; }
+    .form-group { margin-bottom: 16px; }
+    .form-label { font-size: .82rem; color: var(--text-sub); margin-bottom: 6px; display: block; }
+    .form-input {
+      width: 100%; padding: 10px 14px;
+      border: 1.5px solid var(--border); border-radius: 10px;
+      font-size: .92rem; outline: none; transition: border-color .15s;
+      font-family: inherit; background: #fff; color: var(--text);
+    }
+    .form-input:focus { border-color: var(--primary); }
+    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .modal-actions { display: flex; gap: 10px; margin-top: 6px; justify-content: flex-end; }
+    .btn-cancel {
+      padding: 9px 20px; background: var(--bg); border: 1px solid var(--border);
+      border-radius: 9px; font-size: .88rem; cursor: pointer;
+      transition: border-color .15s; font-family: inherit;
+    }
+    .btn-cancel:hover { border-color: #aaa; }
+    .btn-save {
+      padding: 9px 20px; background: var(--primary); border: none;
+      border-radius: 9px; font-size: .88rem; color: #fff; font-weight: 600;
+      cursor: pointer; transition: background .15s; font-family: inherit;
+    }
+    .btn-save:hover { background: var(--primary-dark); }
+
+    /* ── Empty state ── */
+    .empty-state {
+      text-align: center; padding: 36px 0;
+      color: var(--text-sub); font-size: .88rem;
+    }
+    .empty-state .emoji { font-size: 2.2rem; margin-bottom: 10px; }
+
+    /* ── Toast ── */
+    #toast {
+      position: fixed; bottom: 28px; left: 50%; transform: translateX(-50%);
+      background: #333; color: #fff;
+      padding: 10px 22px; border-radius: 99px; font-size: .85rem;
+      opacity: 0; transition: opacity .25s; pointer-events: none; z-index: 999;
+    }
+    #toast.show { opacity: 1; }
+  </style>
+</head>
+<body>
+
+<!-- ── 登录界面 ── -->
+<div id="auth-screen">
+  <div class="auth-card">
+    <div class="logo">💰</div>
+    <h1>资产记录</h1>
+    <p class="subtitle">登录后，你的数据将自动同步到云端</p>
+    <button class="btn-github" onclick="loginWithGitHub()">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0 0 24 12c0-6.63-5.37-12-12-12z"/></svg>
+      使用 GitHub 登录
+    </button>
+  </div>
+</div>
+
+<!-- ── 主界面 ── -->
+<div id="app-screen">
+  <div class="topbar">
+    <div class="topbar-left">
+      <a href="./index.html" class="topbar-back">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><polyline points="15 18 9 12 15 6"/></svg>
+        主页
+      </a>
+      <span style="color:var(--border)">|</span>
+      <span class="topbar-title">💰 资产记录</span>
+    </div>
+    <div class="topbar-right">
+      <div class="user-avatar" id="user-avatar">👤</div>
+    </div>
+  </div>
+
+  <div class="page">
+
+    <!-- 净资产 Banner -->
+    <div class="networth-banner">
+      <div>
+        <div class="networth-label">净资产总额</div>
+        <div class="networth-amount" id="total-amount">¥ —</div>
+        <div class="networth-change" id="total-change" style="display:none"></div>
+      </div>
+      <div class="networth-right">
+        <button class="btn-snapshot" onclick="takeSnapshot()" title="记录一次快照，保存到历史轨迹">📸 记录快照</button>
+        <button class="btn-add-asset" onclick="openModal()">+ 添加资产</button>
+      </div>
+    </div>
+
+    <!-- 分类汇总 + 资产明细 -->
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">分类汇总</span>
+        </div>
+        <div class="card-body">
+          <div class="category-list" id="category-list">
+            <div class="empty-state"><div class="emoji">📊</div><p>暂无资产数据</p></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">资产明细</span>
+        </div>
+        <div class="card-body">
+          <div class="asset-list" id="asset-list">
+            <div class="empty-state"><div class="emoji">💼</div><p>点击右上角 + 添加资产</p></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 趋势图 -->
+    <div class="card grid-full">
+      <div class="card-header">
+        <span class="card-title">资产变化趋势</span>
+        <span style="font-size:.78rem;color:var(--text-sub);">每次「记录快照」生成一个数据点</span>
+      </div>
+      <div class="card-body">
+        <div class="chart-wrap">
+          <canvas id="trend-chart"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <!-- 历史快照 -->
+    <div class="card grid-full">
+      <div class="card-header">
+        <span class="card-title">历史快照</span>
+      </div>
+      <div class="card-body" style="padding-top:10px;">
+        <div id="history-wrap">
+          <div class="empty-state"><div class="emoji">📅</div><p>暂无历史记录，点击「记录快照」开始追踪</p></div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ── 添加/编辑资产 Modal ── -->
+<div class="overlay" id="asset-modal">
+  <div class="modal">
+    <div class="modal-title" id="modal-title">添加资产</div>
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">图标 Emoji</label>
+        <input class="form-input" id="f-emoji" placeholder="🏦" maxlength="4" value="💵">
+      </div>
+      <div class="form-group">
+        <label class="form-label">资产名称 *</label>
+        <input class="form-input" id="f-name" placeholder="例：招行储蓄">
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">类别 *</label>
+        <select class="form-input" id="f-category">
+          <option value="现金存款">现金存款</option>
+          <option value="基金">基金</option>
+          <option value="股票">股票</option>
+          <option value="债券">债券</option>
+          <option value="房产">房产</option>
+          <option value="车辆">车辆</option>
+          <option value="加密货币">加密货币</option>
+          <option value="其他">其他</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">金额（元）*</label>
+        <input class="form-input" id="f-amount" type="number" placeholder="0" min="0">
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">备注（可选）</label>
+      <input class="form-input" id="f-note" placeholder="例：活期，0.35%利率">
+    </div>
+    <input type="hidden" id="f-id">
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeModal()">取消</button>
+      <button class="btn-save" onclick="saveAsset()">保存</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+// ── Supabase ──
+const SUPABASE_URL = 'https://qknojxdhdjqjdoqjdnyu.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFrbm9qeGRoZGpxamRvcWpkbnl1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ1Mzg2ODAsImV4cCI6MjA5MDExNDY4MH0.8BnUklTASBnzgZgu-_hbcVNoZ_LcUcLCR_9P5y8PWjo';
+const { createClient } = supabase;
+const sb = createClient(SUPABASE_URL, SUPABASE_KEY);
+
+let currentUser = null;
+let assets = [];
+let snapshots = [];
+let trendChart = null;
+
+// ── 分类颜色 ──
+const CAT_COLORS = {
+  '现金存款': '#5c6bc0',
+  '基金': '#26a69a',
+  '股票': '#ef5350',
+  '债券': '#ffa726',
+  '房产': '#66bb6a',
+  '车辆': '#ab47bc',
+  '加密货币': '#ff7043',
+  '其他': '#78909c',
+};
+
+// ── 登录 ──
+function getStoredSession() {
+  const key = `sb-${SUPABASE_URL.split('//')[1].split('.')[0]}-auth-token`;
+  try {
+    const raw = localStorage.getItem(key);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw);
+    if (parsed.expires_at && parsed.expires_at * 1000 < Date.now()) return null;
+    return parsed;
+  } catch(e) { return null; }
+}
+
+async function loginWithGitHub() {
+  const origin = window.location.origin;
+  const base = window.location.pathname.replace(/\/[^/]*$/, '/');
+  const redirectTo = origin + base + 'assets.html';
+  const { error } = await sb.auth.signInWithOAuth({
+    provider: 'github', options: { redirectTo }
+  });
+  if (error) toast('登录失败：' + error.message);
+}
+
+sb.auth.onAuthStateChange((event, session) => {
+  if (event === 'SIGNED_IN' && session?.user) initApp(session.user);
+  else if (event === 'SIGNED_OUT') showAuth();
+});
+
+const storedSession = getStoredSession();
+if (storedSession?.user) {
+  initApp(storedSession.user);
+} else {
+  document.getElementById('auth-screen').style.display = 'flex';
+}
+
+function showAuth() {
+  document.getElementById('auth-screen').style.display = 'flex';
+  document.getElementById('app-screen').style.display = 'none';
+}
+
+async function initApp(user) {
+  currentUser = user;
+  document.getElementById('auth-screen').style.display = 'none';
+  document.getElementById('app-screen').style.display = 'block';
+
+  const avatarEl = document.getElementById('user-avatar');
+  const avatarUrl = user.user_metadata?.avatar_url;
+  if (avatarUrl) {
+    avatarEl.innerHTML = `<img src="${avatarUrl}" alt="">`;
+  } else {
+    const name = user.user_metadata?.user_name || user.email || 'U';
+    avatarEl.textContent = name[0].toUpperCase();
+  }
+
+  await ensureTables();
+  await loadData();
+}
+
+// ── 确保表存在（通过 insert 触发） ──
+async function ensureTables() {
+  // assets 表：id, user_id, emoji, name, category, amount, note, created_at, updated_at
+  // asset_snapshots 表：id, user_id, total, breakdown(json), created_at
+  // 不用代码建表，依赖 Supabase 控制台预建或 RLS
+}
+
+// ── 加载数据 ──
+async function loadData() {
+  const uid = currentUser.id;
+
+  const [{ data: a }, { data: s }] = await Promise.all([
+    sb.from('assets').select('*').eq('user_id', uid).order('category').order('amount', { ascending: false }),
+    sb.from('asset_snapshots').select('*').eq('user_id', uid).order('created_at', { ascending: false }).limit(50),
+  ]);
+
+  assets = a || [];
+  snapshots = s || [];
+
+  renderAll();
+}
+
+// ── 渲染全部 ──
+function renderAll() {
+  renderNetworth();
+  renderCategories();
+  renderAssets();
+  renderChart();
+  renderHistory();
+}
+
+function renderNetworth() {
+  const total = assets.reduce((s, a) => s + (parseFloat(a.amount) || 0), 0);
+  document.getElementById('total-amount').textContent = '¥ ' + fmt(total);
+
+  // 与上次快照对比
+  const changeEl = document.getElementById('total-change');
+  if (snapshots.length > 0) {
+    const lastTotal = parseFloat(snapshots[0].total) || 0;
+    const diff = total - lastTotal;
+    const pct = lastTotal > 0 ? ((diff / lastTotal) * 100).toFixed(2) : null;
+    const arrow = diff >= 0 ? '↑' : '↓';
+    const cls = diff > 0 ? 'up' : diff < 0 ? 'down' : '';
+    changeEl.style.display = 'inline-flex';
+    changeEl.className = `networth-change ${cls}`;
+    changeEl.textContent = `${arrow} ¥${fmt(Math.abs(diff))}${pct !== null ? ` (${pct}%)` : ''} · 较上次快照`;
+  } else {
+    changeEl.style.display = 'none';
+  }
+}
+
+function renderCategories() {
+  const el = document.getElementById('category-list');
+  if (!assets.length) {
+    el.innerHTML = '<div class="empty-state"><div class="emoji">📊</div><p>暂无资产数据</p></div>';
+    return;
+  }
+  const total = assets.reduce((s, a) => s + (parseFloat(a.amount) || 0), 0);
+  const cats = {};
+  assets.forEach(a => {
+    cats[a.category] = (cats[a.category] || 0) + (parseFloat(a.amount) || 0);
+  });
+  const sorted = Object.entries(cats).sort((a, b) => b[1] - a[1]);
+  el.innerHTML = sorted.map(([cat, amt]) => {
+    const pct = total > 0 ? ((amt / total) * 100).toFixed(1) : 0;
+    const color = CAT_COLORS[cat] || '#999';
+    return `
+      <div class="category-row">
+        <div class="cat-dot" style="background:${color}"></div>
+        <div style="flex:1">
+          <div style="display:flex;align-items:center;justify-content:space-between">
+            <span class="cat-name">${cat}</span>
+            <span class="cat-amount">¥${fmt(amt)}</span>
+            <span class="cat-pct">${pct}%</span>
+          </div>
+          <div class="cat-bar-track">
+            <div class="cat-bar-fill" style="width:${pct}%;background:${color}"></div>
+          </div>
+        </div>
+      </div>`;
+  }).join('');
+}
+
+function renderAssets() {
+  const el = document.getElementById('asset-list');
+  if (!assets.length) {
+    el.innerHTML = '<div class="empty-state"><div class="emoji">💼</div><p>点击右上角 + 添加资产</p></div>';
+    return;
+  }
+  el.innerHTML = assets.map(a => `
+    <div class="asset-row">
+      <div class="asset-emoji">${a.emoji || '💵'}</div>
+      <div class="asset-info">
+        <div class="asset-name">${esc(a.name)}</div>
+        <div class="asset-cat">${esc(a.category)}</div>
+      </div>
+      <div style="text-align:right">
+        <div class="asset-amount">¥${fmt(a.amount)}</div>
+        ${a.note ? `<div class="asset-note">${esc(a.note)}</div>` : ''}
+      </div>
+      <div class="asset-actions">
+        <button class="icon-btn" onclick="editAsset('${a.id}')" title="编辑">✏️</button>
+        <button class="icon-btn danger" onclick="deleteAsset('${a.id}')" title="删除">🗑</button>
+      </div>
+    </div>`).join('');
+}
+
+function renderChart() {
+  const canvas = document.getElementById('trend-chart');
+  const ctx = canvas.getContext('2d');
+
+  if (trendChart) { trendChart.destroy(); trendChart = null; }
+
+  if (!snapshots.length) {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.fillStyle = '#bbb';
+    ctx.textAlign = 'center';
+    ctx.font = '14px system-ui';
+    ctx.fillText('暂无快照数据，点击「记录快照」开始记录', canvas.width / 2, 100);
+    return;
+  }
+
+  const rev = [...snapshots].reverse();
+  const labels = rev.map(s => {
+    const d = new Date(s.created_at);
+    return `${d.getMonth()+1}/${d.getDate()}`;
+  });
+  const data = rev.map(s => parseFloat(s.total) || 0);
+
+  trendChart = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels,
+      datasets: [{
+        label: '净资产（元）',
+        data,
+        borderColor: '#667eea',
+        backgroundColor: 'rgba(102,126,234,0.1)',
+        borderWidth: 2.5,
+        tension: 0.35,
+        pointBackgroundColor: '#667eea',
+        pointRadius: 4,
+        fill: true,
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          callbacks: {
+            label: ctx => '¥ ' + fmt(ctx.raw)
+          }
+        }
+      },
+      scales: {
+        x: { grid: { display: false }, ticks: { color: '#999', font: { size: 11 } } },
+        y: {
+          grid: { color: '#f0f0f0' },
+          ticks: { color: '#999', font: { size: 11 }, callback: v => '¥' + fmtShort(v) }
+        }
+      }
+    }
+  });
+}
+
+function renderHistory() {
+  const el = document.getElementById('history-wrap');
+  if (!snapshots.length) {
+    el.innerHTML = '<div class="empty-state"><div class="emoji">📅</div><p>暂无历史记录，点击「记录快照」开始追踪</p></div>';
+    return;
+  }
+  let rows = '';
+  snapshots.forEach((s, i) => {
+    const d = new Date(s.created_at);
+    const dateStr = `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+    const total = parseFloat(s.total) || 0;
+    let changeCell = '<span class="change-zero">—</span>';
+    if (i < snapshots.length - 1) {
+      const prev = parseFloat(snapshots[i+1].total) || 0;
+      const diff = total - prev;
+      const cls = diff > 0 ? 'change-up' : diff < 0 ? 'change-down' : 'change-zero';
+      const sign = diff > 0 ? '+' : '';
+      changeCell = `<span class="${cls}">${sign}¥${fmt(Math.abs(diff))}${diff < 0 ? ' ▼' : diff > 0 ? ' ▲' : ''}</span>`;
+    }
+    // breakdown
+    let bk = '';
+    try {
+      const bd = typeof s.breakdown === 'string' ? JSON.parse(s.breakdown) : s.breakdown;
+      if (bd) {
+        bk = Object.entries(bd).map(([k,v]) => `${k} ¥${fmtShort(v)}`).join(' · ');
+      }
+    } catch(e) {}
+    rows += `
+      <tr>
+        <td>${dateStr}</td>
+        <td style="font-weight:600">¥${fmt(total)}</td>
+        <td>${changeCell}</td>
+        <td style="color:var(--text-sub);font-size:.78rem">${bk}</td>
+      </tr>`;
+  });
+  el.innerHTML = `
+    <table class="history-table">
+      <thead><tr>
+        <th>时间</th><th>净资产</th><th>较上次变化</th><th>分类明细</th>
+      </tr></thead>
+      <tbody>${rows}</tbody>
+    </table>`;
+}
+
+// ── 快照 ──
+async function takeSnapshot() {
+  if (!currentUser) return;
+  const total = assets.reduce((s, a) => s + (parseFloat(a.amount) || 0), 0);
+  const breakdown = {};
+  assets.forEach(a => {
+    breakdown[a.category] = (breakdown[a.category] || 0) + (parseFloat(a.amount) || 0);
+  });
+  const { error } = await sb.from('asset_snapshots').insert({
+    user_id: currentUser.id,
+    total,
+    breakdown,
+  });
+  if (error) { toast('快照保存失败：' + error.message); return; }
+  toast('快照已记录 ✓');
+  await loadData();
+}
+
+// ── Modal ──
+function openModal(asset) {
+  document.getElementById('f-id').value = asset ? asset.id : '';
+  document.getElementById('f-emoji').value = asset ? (asset.emoji || '💵') : '💵';
+  document.getElementById('f-name').value = asset ? asset.name : '';
+  document.getElementById('f-category').value = asset ? asset.category : '现金存款';
+  document.getElementById('f-amount').value = asset ? asset.amount : '';
+  document.getElementById('f-note').value = asset ? (asset.note || '') : '';
+  document.getElementById('modal-title').textContent = asset ? '编辑资产' : '添加资产';
+  document.getElementById('asset-modal').classList.add('open');
+  setTimeout(() => document.getElementById('f-name').focus(), 50);
+}
+function closeModal() {
+  document.getElementById('asset-modal').classList.remove('open');
+}
+document.getElementById('asset-modal').addEventListener('click', e => {
+  if (e.target === document.getElementById('asset-modal')) closeModal();
+});
+
+function editAsset(id) {
+  const a = assets.find(x => x.id === id);
+  if (a) openModal(a);
+}
+
+async function saveAsset() {
+  const id = document.getElementById('f-id').value;
+  const emoji = document.getElementById('f-emoji').value.trim() || '💵';
+  const name = document.getElementById('f-name').value.trim();
+  const category = document.getElementById('f-category').value;
+  const amount = parseFloat(document.getElementById('f-amount').value);
+  const note = document.getElementById('f-note').value.trim();
+
+  if (!name) { toast('请填写资产名称'); return; }
+  if (isNaN(amount)) { toast('请填写正确的金额'); return; }
+
+  const row = { user_id: currentUser.id, emoji, name, category, amount, note };
+
+  let error;
+  if (id) {
+    ({ error } = await sb.from('assets').update(row).eq('id', id).eq('user_id', currentUser.id));
+  } else {
+    ({ error } = await sb.from('assets').insert(row));
+  }
+  if (error) { toast('保存失败：' + error.message); return; }
+
+  closeModal();
+  toast(id ? '已更新 ✓' : '已添加 ✓');
+  await loadData();
+}
+
+async function deleteAsset(id) {
+  if (!confirm('确定删除这条资产记录？')) return;
+  const { error } = await sb.from('assets').delete().eq('id', id).eq('user_id', currentUser.id);
+  if (error) { toast('删除失败：' + error.message); return; }
+  toast('已删除');
+  await loadData();
+}
+
+// ── 工具函数 ──
+function fmt(v) {
+  return Number(v || 0).toLocaleString('zh-CN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+function fmtShort(v) {
+  v = Number(v || 0);
+  if (v >= 1e8) return (v / 1e8).toFixed(1) + '亿';
+  if (v >= 1e4) return (v / 1e4).toFixed(1) + 'w';
+  return v.toFixed(0);
+}
+function pad(n) { return String(n).padStart(2, '0'); }
+function esc(s) { return String(s || '').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+let toastTimer = null;
+function toast(msg) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.classList.add('show');
+  if (toastTimer) clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => el.classList.remove('show'), 2500);
+}
+</script>
+</body>
+</html>
