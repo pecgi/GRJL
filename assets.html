@@ -260,6 +260,37 @@
     }
     .form-input:focus { border-color: var(--primary); }
     .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+
+    /* ── Emoji Picker ── */
+    .emoji-picker {
+      display: flex; flex-wrap: wrap; gap: 6px;
+      padding: 10px 0 4px;
+    }
+    .emoji-opt {
+      width: 38px; height: 38px;
+      border: 2px solid transparent; border-radius: 10px;
+      background: var(--bg);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.25rem; cursor: pointer;
+      transition: border-color .12s, background .12s, transform .12s;
+    }
+    .emoji-opt:hover { background: var(--primary-light); transform: scale(1.1); }
+    .emoji-opt.active { border-color: var(--primary); background: var(--primary-light); }
+    .emoji-custom {
+      width: 38px; height: 38px;
+      border: 2px dashed var(--border); border-radius: 10px;
+      background: transparent;
+      display: flex; align-items: center; justify-content: center;
+      font-size: .85rem; color: var(--text-sub); cursor: pointer;
+      transition: border-color .12s;
+    }
+    .emoji-custom:hover { border-color: var(--primary); color: var(--primary); }
+    .emoji-custom-input {
+      width: 42px; padding: 6px; font-size: 1.1rem; text-align: center;
+      border: 2px solid var(--primary); border-radius: 10px;
+      background: var(--primary-light);
+      outline: none;
+    }
     .modal-actions { display: flex; gap: 10px; margin-top: 6px; justify-content: flex-end; }
     .btn-cancel {
       padding: 9px 20px; background: var(--bg); border: 1px solid var(--border);
@@ -396,8 +427,8 @@
     <div class="modal-title" id="modal-title">添加资产</div>
     <div class="form-row">
       <div class="form-group">
-        <label class="form-label">图标 Emoji</label>
-        <input class="form-input" id="f-emoji" placeholder="🏦" maxlength="4" value="💵">
+        <label class="form-label">图标</label>
+        <div class="emoji-picker" id="emoji-picker"></div>
       </div>
       <div class="form-group">
         <label class="form-label">资产名称 *</label>
@@ -748,14 +779,68 @@ async function takeSnapshot() {
 }
 
 // ── Modal ──
+// ── Emoji 配置 ──
+const EMOJI_BY_CAT = {
+  '现金存款': ['💵','🏦','💳','🪙','💰','🧧','📦'],
+  '基金':     ['📈','📊','📉','💡','🏦','💎','🔄'],
+  '股票':     ['🚀','📉','📈','📊','💹','🔥','⚡'],
+  '债券':     ['📜','🪙','🏦','🔒','🛡','📋','🏛'],
+  '房产':     ['🏠','🏢','🏘','🏗','🔑','🏙','🏡'],
+  '车辆':     ['🚗','🚙','🏍','🛵','🚐','🏎','🚕'],
+  '加密货币': ['🪙','₿','Ξ','💎','🔗','🔒','🌐'],
+  '其他':     ['🎁','🏷','✨','🧩','🎲','📌','📦'],
+};
+const ALL_EMOJIS = Object.values(EMOJI_BY_CAT).flat();
+let selectedEmoji = '💵';
+
+// 类别切换时更新 emoji 面板
+document.addEventListener('change', e => {
+  if (e.target.id === 'f-category') renderEmojiPicker(e.target.value);
+});
+
+function renderEmojiPicker(category) {
+  const picker = document.getElementById('emoji-picker');
+  const emojis = EMOJI_BY_CAT[category] || ALL_EMOJIS.slice(0, 14);
+  picker.innerHTML = emojis.map(em => `
+    <div class="emoji-opt${em === selectedEmoji ? ' active' : ''}" data-emoji="${em}" onclick="pickEmoji('${em}')">${em}</div>
+  `).join('') + `
+    <div class="emoji-custom" onclick="showCustomEmoji()" title="自定义 Emoji">✏️</div>
+  `;
+}
+
+function pickEmoji(em) {
+  selectedEmoji = em;
+  document.querySelectorAll('.emoji-opt').forEach(el => el.classList.toggle('active', el.dataset.emoji === em));
+  // 隐藏自定义输入
+  const ci = document.getElementById('custom-emoji-input');
+  if (ci) ci.remove();
+}
+
+function showCustomEmoji() {
+  const picker = document.getElementById('emoji-picker');
+  let ci = document.getElementById('custom-emoji-input');
+  if (ci) { ci.focus(); return; }
+  ci = document.createElement('input');
+  ci.id = 'custom-emoji-input';
+  ci.className = 'emoji-custom-input';
+  ci.maxLength = 4;
+  ci.value = selectedEmoji;
+  ci.oninput = () => { selectedEmoji = ci.value || '💵'; };
+  ci.onblur = () => { setTimeout(() => { if (ci.parentNode) ci.remove(); }, 150); };
+  picker.appendChild(ci);
+  ci.focus();
+  ci.select();
+}
+
 function openModal(asset) {
+  selectedEmoji = asset ? (asset.emoji || '💵') : '💵';
   document.getElementById('f-id').value = asset ? asset.id : '';
-  document.getElementById('f-emoji').value = asset ? (asset.emoji || '💵') : '💵';
   document.getElementById('f-name').value = asset ? asset.name : '';
   document.getElementById('f-category').value = asset ? asset.category : '现金存款';
   document.getElementById('f-amount').value = asset ? asset.amount : '';
   document.getElementById('f-note').value = asset ? (asset.note || '') : '';
   document.getElementById('modal-title').textContent = asset ? '编辑资产' : '添加资产';
+  renderEmojiPicker(document.getElementById('f-category').value);
   document.getElementById('asset-modal').classList.add('open');
   setTimeout(() => document.getElementById('f-name').focus(), 50);
 }
@@ -773,7 +858,7 @@ function editAsset(id) {
 
 async function saveAsset() {
   const id = document.getElementById('f-id').value;
-  const emoji = document.getElementById('f-emoji').value.trim() || '💵';
+  const emoji = selectedEmoji;
   const name = document.getElementById('f-name').value.trim();
   const category = document.getElementById('f-category').value;
   const amount = parseFloat(document.getElementById('f-amount').value);
