@@ -206,6 +206,7 @@
     .asset-cat { font-size: .76rem; color: var(--text-sub); margin-top: 2px; }
     .asset-amount { font-size: .95rem; font-weight: 600; color: var(--text); text-align: right; }
     .asset-note { font-size: .75rem; color: var(--text-sub); margin-top: 2px; text-align: right; }
+    .asset-date { font-size: .75rem; color: var(--text-sub); margin-top: 2px; text-align: right; }
     .asset-actions { display: flex; gap: 6px; }
     .icon-btn {
       width: 28px; height: 28px;
@@ -450,13 +451,19 @@
         </select>
       </div>
       <div class="form-group">
+        <label class="form-label">记录日期 *</label>
+        <input class="form-input" id="f-date" type="date" required>
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
         <label class="form-label">金额（元）*</label>
         <input class="form-input" id="f-amount" type="number" placeholder="0" min="0">
       </div>
-    </div>
-    <div class="form-group">
-      <label class="form-label">备注（可选）</label>
-      <input class="form-input" id="f-note" placeholder="例：活期，0.35%利率">
+      <div class="form-group">
+        <label class="form-label">备注（可选）</label>
+        <input class="form-input" id="f-note" placeholder="例：活期，0.35%利率">
+      </div>
     </div>
     <input type="hidden" id="f-id">
     <div class="modal-actions">
@@ -648,6 +655,7 @@ function renderAssets() {
       <div style="text-align:right">
         <div class="asset-amount">¥${fmt(a.amount)}</div>
         ${a.note ? `<div class="asset-note">${esc(a.note)}</div>` : ''}
+        ${a.recorded_at ? `<div class="asset-date">📅 ${formatDateInput(a.recorded_at)}</div>` : ''}
       </div>
       <div class="asset-actions">
         <button class="icon-btn" onclick="editAsset('${a.id}')" title="编辑">✏️</button>
@@ -839,10 +847,21 @@ function openModal(asset) {
   document.getElementById('f-category').value = asset ? asset.category : '现金存款';
   document.getElementById('f-amount').value = asset ? asset.amount : '';
   document.getElementById('f-note').value = asset ? (asset.note || '') : '';
+  document.getElementById('f-date').value = asset ? formatDateInput(asset.recorded_at) : today();
   document.getElementById('modal-title').textContent = asset ? '编辑资产' : '添加资产';
   renderEmojiPicker(document.getElementById('f-category').value);
   document.getElementById('asset-modal').classList.add('open');
   setTimeout(() => document.getElementById('f-name').focus(), 50);
+}
+
+function today() {
+  const d = new Date();
+  return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+}
+function formatDateInput(ts) {
+  if (!ts) return today();
+  const d = new Date(ts);
+  return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
 }
 function closeModal() {
   document.getElementById('asset-modal').classList.remove('open');
@@ -863,11 +882,14 @@ async function saveAsset() {
   const category = document.getElementById('f-category').value;
   const amount = parseFloat(document.getElementById('f-amount').value);
   const note = document.getElementById('f-note').value.trim();
+  const date = document.getElementById('f-date').value;
 
   if (!name) { toast('请填写资产名称'); return; }
   if (isNaN(amount)) { toast('请填写正确的金额'); return; }
+  if (!date) { toast('请选择记录日期'); return; }
 
-  const row = { user_id: currentUser.id, emoji, name, category, amount, note };
+  const recorded_at = new Date(date + 'T00:00:00').toISOString();
+  const row = { user_id: currentUser.id, emoji, name, category, amount, note, recorded_at };
 
   let error;
   if (id) {
