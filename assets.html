@@ -231,6 +231,12 @@
     .history-table th { color: var(--text-sub); font-weight: 500; }
     .history-table td { color: var(--text); }
     .history-table tr:last-child td { border-bottom: none; }
+    .del-snap-btn {
+      font-size: .7rem; color: var(--text-sub); cursor: pointer;
+      border: none; background: none; padding: 2px 6px; border-radius: 4px;
+      transition: color .12s, background .12s;
+    }
+    .del-snap-btn:hover { color: #e55; background: rgba(238,85,85,.1); }
     .change-up { color: var(--success); }
     .change-down { color: var(--danger); }
     .change-zero { color: var(--text-sub); }
@@ -757,12 +763,13 @@ function renderHistory() {
         <td style="font-weight:600">¥${fmt(total)}</td>
         <td>${changeCell}</td>
         <td style="color:var(--text-sub);font-size:.78rem">${bk}</td>
+        <td><button class="del-snap-btn" onclick="deleteSnapshot('${s.id}')">删除</button></td>
       </tr>`;
   });
   el.innerHTML = `
     <table class="history-table">
       <thead><tr>
-        <th>时间</th><th>净资产</th><th>较上次变化</th><th>分类明细</th>
+        <th>时间</th><th>净资产</th><th>较上次变化</th><th>分类明细</th><th></th>
       </tr></thead>
       <tbody>${rows}</tbody>
     </table>`;
@@ -783,6 +790,14 @@ async function takeSnapshot() {
   });
   if (error) { toast('快照保存失败：' + error.message); return; }
   toast('快照已记录 ✓');
+  await loadData();
+}
+
+async function deleteSnapshot(id) {
+  if (!confirm('确定删除这条快照？')) return;
+  const { error } = await sb.from('asset_snapshots').delete().eq('id', id).eq('user_id', currentUser.id);
+  if (error) { toast('删除失败：' + error.message); return; }
+  toast('已删除 ✓');
   await loadData();
 }
 
