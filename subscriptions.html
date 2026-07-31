@@ -7,15 +7,15 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
     :root {
-      --bg: #f5f6fa;
+      --bg: #f6f4f1;
       --surface: #ffffff;
-      --primary: #5c6bc0;
-      --primary-light: #e8eaf6;
-      --primary-dark: #3949ab;
+      --accent: #b45309;
+      --accent-light: #fef8f0;
+      --accent-dark: #92400e;
       --accent: #ff7043;
       --text: #2d2d2d;
-      --text-sub: #777;
-      --border: #e0e0e0;
+      --text-sub: #a39e99;
+      --border: #e8e4e0;
       --success: #43a047;
       --warn: #fb8c00;
       --danger: #e53935;
@@ -37,7 +37,7 @@
       align-items: center;
       justify-content: center;
       padding: 24px;
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      background: var(--accent);
     }
     .auth-card {
       background: #fff;
@@ -84,10 +84,10 @@
       font-size: .93rem; outline: none;
       transition: border-color .2s;
     }
-    .auth-form input:focus { border-color: var(--primary); }
+    .auth-form input:focus { border-color: var(--accent); }
     .btn-auth-email {
       width: 100%; padding: 13px;
-      background: var(--primary); color: #fff;
+      background: var(--accent); color: #fff;
       border: none; border-radius: 12px;
       font-size: .95rem; font-weight: 600;
       cursor: pointer;
@@ -99,7 +99,7 @@
       text-align: center; margin-top: 14px;
       font-size: .85rem; color: var(--text-sub);
     }
-    .auth-toggle a { color: var(--primary); cursor: pointer; text-decoration: none; font-weight: 600; }
+    .auth-toggle a { color: var(--accent); cursor: pointer; text-decoration: none; font-weight: 600; }
     .auth-toggle a:hover { text-decoration: underline; }
     .auth-msg { font-size: .85rem; color: var(--danger); margin-top: 10px; text-align: center; min-height: 20px; }
     .auth-msg.success { color: var(--success); }
@@ -109,7 +109,7 @@
 
     /* ── Header ── */
     header {
-      background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+      background: linear-gradient(135deg, var(--accent) 0%, var(--accent-dark) 100%);
       color: #fff;
       padding: 20px 32px;
       display: flex;
@@ -137,7 +137,7 @@
     .user-avatar img { width: 100%; height: 100%; object-fit: cover; }
     .btn-add {
       background: #fff;
-      color: var(--primary-dark);
+      color: var(--accent-dark);
       border: none;
       padding: 9px 20px;
       border-radius: 50px;
@@ -166,7 +166,7 @@
     /* ── Loading ── */
     .loading-bar {
       height: 3px;
-      background: linear-gradient(90deg, var(--primary), #a78bfa, var(--primary));
+      background: linear-gradient(90deg, var(--accent), #a78bfa, var(--accent));
       background-size: 200%;
       animation: shimmer 1.5s infinite;
       display: none;
@@ -194,7 +194,7 @@
       gap: 4px;
     }
     .stat-card .label { font-size: .78rem; color: var(--text-sub); text-transform: uppercase; letter-spacing: .5px; }
-    .stat-card .value { font-size: 1.5rem; font-weight: 700; color: var(--primary); }
+    .stat-card .value { font-size: 1.5rem; font-weight: 700; color: var(--accent); }
     .stat-card .sub { font-size: .8rem; color: var(--text-sub); }
 
     /* ── Filters / Search ── */
@@ -220,7 +220,7 @@
       outline: none;
       transition: border-color .2s;
     }
-    .search-wrap input:focus { border-color: var(--primary); }
+    .search-wrap input:focus { border-color: var(--accent); }
     .search-wrap svg {
       position: absolute;
       left: 12px;
@@ -238,9 +238,9 @@
       transition: all .15s;
     }
     .filter-btn.active, .filter-btn:hover {
-      background: var(--primary);
+      background: var(--accent);
       color: #fff;
-      border-color: var(--primary);
+      border-color: var(--accent);
     }
 
     /* ── Cards Grid ── */
@@ -287,7 +287,7 @@
     }
     .icon-btn:hover { background: var(--bg); color: var(--text); }
     .card-price { display: flex; align-items: baseline; gap: 6px; }
-    .card-price .amount { font-size: 1.5rem; font-weight: 800; color: var(--primary); }
+    .card-price .amount { font-size: 1.5rem; font-weight: 800; color: var(--accent); }
     .card-price .cycle { font-size: .82rem; color: var(--text-sub); }
     .card-meta { display: flex; flex-direction: column; gap: 6px; }
     .meta-row {
@@ -350,7 +350,7 @@
     }
     .form-group input:focus,
     .form-group select:focus,
-    .form-group textarea:focus { border-color: var(--primary); background: #fff; }
+    .form-group textarea:focus { border-color: var(--accent); background: #fff; }
     .form-group textarea { resize: vertical; min-height: 72px; }
     .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
     .emoji-picker { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 6px; }
@@ -359,7 +359,7 @@
       padding: 4px 6px; border-radius: 8px;
       border: 2px solid transparent; transition: border-color .15s;
     }
-    .emoji-opt.selected { border-color: var(--primary); background: var(--primary-light); }
+    .emoji-opt.selected { border-color: var(--accent); background: var(--accent-light); }
     .color-picker { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 6px; }
     .color-opt {
       width: 26px; height: 26px; border-radius: 50%;
@@ -377,7 +377,7 @@
       transition: opacity .15s;
     }
     .btn:hover { opacity: .85; }
-    .btn-primary { background: var(--primary); color: #fff; }
+    .btn-primary { background: var(--accent); color: #fff; }
     .btn-ghost { background: var(--bg); color: var(--text); }
 
     /* ── Confirm Dialog ── */
@@ -428,7 +428,7 @@
   <header>
     <div>
       <div style="font-size:.75rem;color:#aaa;margin-bottom:4px;letter-spacing:.5px;">
-        <a href="./index.html" style="color:#aaa;text-decoration:none;" onmouseover="this.style.color='#5c6bc0'" onmouseout="this.style.color='#aaa'">← 生活数字记录</a>
+        <a href="./index.html" style="color:#aaa;text-decoration:none;" onmouseover="this.style.color='#b45309'" onmouseout="this.style.color='#aaa'">← 生活数字记录</a>
       </div>
       <h1>📦 我的订阅 <span id="hdr-count"></span></h1>
     </div>
@@ -607,7 +607,7 @@ let deleteId = null;
 let currentFilter = 'all';
 
 const EMOJIS = ['📋','📚','🎓','📰','💡','🎯','🎵','🎬','💻','🌐','⭐','🏆','🔑','🗞️','📊','🎮','🤖','🌟','💎','🔥'];
-const COLORS = ['#5c6bc0','#26a69a','#ef5350','#ff7043','#ab47bc','#42a5f5','#66bb6a','#ffca28','#8d6e63','#78909c'];
+const COLORS = ['#b45309','#26a69a','#ef5350','#ff7043','#ab47bc','#42a5f5','#66bb6a','#ffca28','#8d6e63','#78909c'];
 let selectedEmoji = EMOJIS[0];
 let selectedColor = COLORS[0];
 
@@ -704,7 +704,7 @@ function dbToLocal(row) {
     status: row.status || 'active',
     note: row.notes || '',
     emoji: row.icon || '📦',
-    color: row.color || '#5c6bc0',
+    color: row.color || '#b45309',
     createdAt: row.created_at,
   };
 }

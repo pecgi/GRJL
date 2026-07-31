@@ -8,13 +8,13 @@
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
     :root {
-      --bg: #fafafa;
+      --bg: #f6f4f1;
       --surface: #ffffff;
       --text: #1a1a1a;
       --text-sub: #999;
-      --border: #ebebeb;
-      --primary: #5c6bc0;
-      --primary-light: #e8eaf6;
+      --border: #e8e4e0;
+      --accent: #b45309;
+      --accent-light: #fef8f0;
       --green: #16a34a;
       --green-light: #dcfce7;
       --radius: 12px;
@@ -74,7 +74,7 @@
       font-size: .88rem; color: var(--text-sub);
     }
     .stat-item strong { color: var(--text); font-size: 1.1rem; margin-right: 3px; }
-    .stat-coverage { color: var(--primary); font-weight: 700; font-size: 1rem; }
+    .stat-coverage { color: var(--accent); font-weight: 700; font-size: 1rem; }
 
     /* ── 日历 ── */
     /* 星期标题 */
@@ -116,7 +116,7 @@
       min-height: 72px;
     }
     .day-cell:hover {
-      border-color: var(--primary);
+      border-color: var(--accent);
       transform: translateY(-1px);
       box-shadow: 0 4px 12px rgba(92,107,192,.12);
     }
@@ -127,8 +127,8 @@
       pointer-events: none;
     }
     .day-cell.today {
-      border-color: var(--primary);
-      background: var(--primary-light);
+      border-color: var(--accent);
+      background: var(--accent-light);
     }
     .day-cell.has-entry {
       border-color: #86efac;
@@ -154,7 +154,7 @@
       align-self: flex-start;
     }
     .day-cell.today .day-num {
-      color: var(--primary);
+      color: var(--accent);
     }
     .day-cell.has-entry .day-num {
       color: var(--green);
@@ -236,12 +236,12 @@
     }
     .drawer-actions { display: flex; gap: 8px; }
     .btn-write {
-      background: var(--primary); color: #fff;
+      background: var(--accent); color: #fff;
       border: none; border-radius: 8px;
       padding: 7px 16px; font-size: .85rem; font-weight: 600;
       cursor: pointer; transition: background .15s;
     }
-    .btn-write:hover { background: #3949ab; }
+    .btn-write:hover { background: var(--accent-dark); }
     .btn-close {
       background: #f3f4f6; color: var(--text-sub);
       border: none; border-radius: 8px;

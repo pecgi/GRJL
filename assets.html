@@ -8,14 +8,14 @@
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
   <style>
     :root {
-      --bg: #f5f6fa;
+      --bg: #f6f4f1;
       --surface: #ffffff;
-      --primary: #5c6bc0;
-      --primary-light: #e8eaf6;
-      --primary-dark: #3949ab;
+      --accent: #b45309;
+      --accent-light: #fef8f0;
+      --accent-dark: #92400e;
       --text: #2d2d2d;
-      --text-sub: #777;
-      --border: #e0e0e0;
+      --text-sub: #a39e99;
+      --border: #e8e4e0;
       --success: #43a047;
       --warn: #fb8c00;
       --danger: #e53935;
@@ -37,7 +37,7 @@
       align-items: center;
       justify-content: center;
       padding: 24px;
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      background: var(--accent);
     }
     .auth-card {
       background: #fff;
@@ -89,7 +89,7 @@
     .topbar-right { display: flex; align-items: center; gap: 10px; }
     .user-avatar {
       width: 30px; height: 30px; border-radius: 50%;
-      background: var(--primary); color: #fff;
+      background: var(--accent); color: #fff;
       display: flex; align-items: center; justify-content: center;
       font-size: .8rem; font-weight: 600; overflow: hidden;
     }
@@ -100,7 +100,7 @@
 
     /* ── Net Worth Banner ── */
     .networth-banner {
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      background: var(--accent);
       border-radius: 20px;
       padding: 32px 36px;
       color: #fff;
@@ -134,7 +134,7 @@
       background: #fff;
       border: none;
       border-radius: 10px;
-      color: var(--primary-dark); font-size: .88rem; font-weight: 600;
+      color: var(--accent-dark); font-size: .88rem; font-weight: 600;
       cursor: pointer; transition: opacity .15s;
     }
     .btn-add-asset:hover { opacity: .9; }
@@ -265,7 +265,7 @@
       font-size: .92rem; outline: none; transition: border-color .15s;
       font-family: inherit; background: #fff; color: var(--text);
     }
-    .form-input:focus { border-color: var(--primary); }
+    .form-input:focus { border-color: var(--accent); }
     .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
 
     /* ── Emoji Picker ── */
@@ -281,8 +281,8 @@
       font-size: 1.25rem; cursor: pointer;
       transition: border-color .12s, background .12s, transform .12s;
     }
-    .emoji-opt:hover { background: var(--primary-light); transform: scale(1.1); }
-    .emoji-opt.active { border-color: var(--primary); background: var(--primary-light); }
+    .emoji-opt:hover { background: var(--accent-light); transform: scale(1.1); }
+    .emoji-opt.active { border-color: var(--accent); background: var(--accent-light); }
     .emoji-custom {
       width: 38px; height: 38px;
       border: 2px dashed var(--border); border-radius: 10px;
@@ -291,11 +291,11 @@
       font-size: .85rem; color: var(--text-sub); cursor: pointer;
       transition: border-color .12s;
     }
-    .emoji-custom:hover { border-color: var(--primary); color: var(--primary); }
+    .emoji-custom:hover { border-color: var(--accent); color: var(--accent); }
     .emoji-custom-input {
       width: 42px; padding: 6px; font-size: 1.1rem; text-align: center;
-      border: 2px solid var(--primary); border-radius: 10px;
-      background: var(--primary-light);
+      border: 2px solid var(--accent); border-radius: 10px;
+      background: var(--accent-light);
       outline: none;
     }
     .modal-actions { display: flex; gap: 10px; margin-top: 6px; justify-content: flex-end; }
@@ -306,11 +306,11 @@
     }
     .btn-cancel:hover { border-color: #aaa; }
     .btn-save {
-      padding: 9px 20px; background: var(--primary); border: none;
+      padding: 9px 20px; background: var(--accent); border: none;
       border-radius: 9px; font-size: .88rem; color: #fff; font-weight: 600;
       cursor: pointer; transition: background .15s; font-family: inherit;
     }
-    .btn-save:hover { background: var(--primary-dark); }
+    .btn-save:hover { background: var(--accent-dark); }
 
     /* ── Empty state ── */
     .empty-state {
@@ -495,7 +495,7 @@ let trendChart = null;
 
 // ── 分类颜色 ──
 const CAT_COLORS = {
-  '现金存款': '#5c6bc0',
+  '现金存款': '#b45309',
   '基金': '#26a69a',
   '股票': '#ef5350',
   '债券': '#ffa726',
@@ -699,11 +699,11 @@ function renderChart() {
       datasets: [{
         label: '净资产（元）',
         data,
-        borderColor: '#667eea',
+        borderColor: '#b45309',
         backgroundColor: 'rgba(102,126,234,0.1)',
         borderWidth: 2.5,
         tension: 0.35,
-        pointBackgroundColor: '#667eea',
+        pointBackgroundColor: '#b45309',
         pointRadius: 4,
         fill: true,
       }]
