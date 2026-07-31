@@ -8,13 +8,13 @@
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
     :root {
-      --bg: #f6f4f1;
+      --bg: #fafafa;
       --text: #1a1a1a;
       --text-sub: #aaa;
       --text-placeholder: #ccc;
       --border: #e8e8e8;
-      --accent: #b45309;
-      --accent-dark: #92400e;
+      --primary: #5c6bc0;
+      --primary-dark: #3949ab;
       --radius: 12px;
     }
 
@@ -60,12 +60,12 @@
     .btn-discard:hover { background: #f3f4f6; color: var(--text); }
 
     .btn-save {
-      background: var(--accent); color: #fff;
+      background: var(--primary); color: #fff;
       border: none; border-radius: 10px;
       padding: 9px 22px; font-size: .9rem; font-weight: 600;
       cursor: pointer; transition: background .15s, transform .1s;
     }
-    .btn-save:hover { background: var(--accent-dark); transform: translateY(-1px); }
+    .btn-save:hover { background: var(--primary-dark); transform: translateY(-1px); }
     .btn-save:active { transform: translateY(0); }
     .btn-save:disabled { background: #c7cbe8; cursor: not-allowed; transform: none; }
 
@@ -177,7 +177,7 @@
       background: rgba(255,255,255,.6);
       z-index: 300;
       align-items: center; justify-content: center;
-      font-size: .95rem; color: var(--accent); font-weight: 600;
+      font-size: .95rem; color: var(--primary); font-weight: 600;
     }
     .saving-mask.show { display: flex; }
 

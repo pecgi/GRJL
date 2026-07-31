@@ -9,17 +9,17 @@
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
     :root {
-      --bg: #f6f4f1;
+      --bg: #fafafa;
       --card-bg: #ffffff;
       --card-border: #ebebeb;
       --text: #1a1a1a;
-      --text-sub: #a39e99;
+      --text-sub: #888;
       --green: #16a34a;
       --yellow: #ca8a04;
       --orange: #ea580c;
       --gray: #9ca3af;
-      --accent: #b45309;
-      --accent-dark: #92400e;
+      --primary: #5c6bc0;
+      --primary-dark: #3949ab;
       --radius: 14px;
     }
 
@@ -75,8 +75,8 @@
     }
     .year-card:hover { transform: translateY(-2px); border-color: #c7c9d4; }
     .year-card.active {
-      border-color: var(--accent);
-      box-shadow: 0 0 0 1px var(--accent), 0 4px 20px rgba(99,102,241,.25);
+      border-color: var(--primary);
+      box-shadow: 0 0 0 1px var(--primary), 0 4px 20px rgba(99,102,241,.25);
     }
     .year-card .yr { font-size: .88rem; font-weight: 600; color: var(--text-sub); margin-bottom: 5px; }
     .year-card .pct { font-size: 1.35rem; font-weight: 800; line-height: 1.1; margin-bottom: 8px; }
@@ -138,12 +138,12 @@
     }
     .btn-add-entry {
       display: flex; align-items: center; gap: 6px;
-      background: var(--accent); color: #fff;
+      background: var(--primary); color: #fff;
       border: none; border-radius: 10px;
       padding: 9px 18px; font-size: .88rem; font-weight: 600;
       cursor: pointer; transition: background .15s, transform .1s;
     }
-    .btn-add-entry:hover { background: var(--accent-dark); transform: translateY(-1px); }
+    .btn-add-entry:hover { background: var(--primary-dark); transform: translateY(-1px); }
     .btn-today {
       background: #ffffff; color: var(--text-sub);
       border: 1.5px solid var(--card-border); border-radius: 10px;

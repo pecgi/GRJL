@@ -6,13 +6,13 @@
   <title>公众号阅读 · 生活数字记录</title>
   <style>
     :root {
-      --bg: #f6f4f1;
+      --bg: #fafafa;
       --surface: #ffffff;
       --text: #1a1a1a;
-      --text-sub: #a39e99;
+      --text-sub: #888;
       --border: #ebebeb;
-      --accent: #b45309;
-      --accent-dark: #92400e;
+      --primary: #5c6bc0;
+      --primary-dark: #3949ab;
       --green: #43a047;
       --red: #e53935;
       --star: #f9a825;
@@ -50,7 +50,7 @@
     .top-title { font-size: .95rem; font-weight: 600; flex: 1; text-align: center; }
     .btn-add {
       padding: 7px 18px;
-      background: var(--accent);
+      background: var(--primary);
       color: #fff;
       border: none;
       border-radius: 8px;
@@ -60,7 +60,7 @@
       transition: background .15s;
       white-space: nowrap;
     }
-    .btn-add:hover { background: var(--accent-dark); }
+    .btn-add:hover { background: var(--primary-dark); }
 
     /* ── 筛选栏 ── */
     .filter-bar {
@@ -82,8 +82,8 @@
       cursor: pointer;
       transition: all .15s;
     }
-    .filter-btn:hover { border-color: var(--accent); color: var(--accent); }
-    .filter-btn.active { border-color: var(--accent); background: var(--accent-light); color: var(--accent); font-weight: 500; }
+    .filter-btn:hover { border-color: var(--primary); color: var(--primary); }
+    .filter-btn.active { border-color: var(--primary); background: #f3f4fd; color: var(--primary); font-weight: 500; }
     .filter-sep { width: 1px; height: 18px; background: var(--border); }
     .account-filter {
       padding: 5px 12px;
@@ -96,7 +96,7 @@
       outline: none;
       appearance: none;
     }
-    .account-filter:focus { border-color: var(--accent); }
+    .account-filter:focus { border-color: var(--primary); }
 
     /* ── 统计条 ── */
     .stats-bar {
@@ -164,8 +164,8 @@
     }
     .card-account {
       font-size: .75rem;
-      color: var(--accent);
-      background: var(--accent-light);
+      color: var(--primary);
+      background: #f3f4fd;
       padding: 2px 8px;
       border-radius: 4px;
       font-weight: 500;
@@ -181,7 +181,7 @@
       display: block;
     }
     .article-card.is-read .card-title { text-decoration: line-through; color: var(--text-sub); }
-    .card-title:hover { color: var(--accent); }
+    .card-title:hover { color: var(--primary); }
     .card-summary {
       font-size: .82rem;
       color: var(--text-sub);
@@ -259,7 +259,7 @@
       font-family: inherit;
       background: var(--bg);
     }
-    .form-input:focus { border-color: var(--accent); background: #fff; }
+    .form-input:focus { border-color: var(--primary); background: #fff; }
     textarea.form-input { resize: vertical; min-height: 72px; }
     .form-hint { font-size: .75rem; color: var(--text-sub); margin-top: 4px; }
     .form-actions { display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px; }
@@ -277,14 +277,14 @@
       padding: 9px 20px;
       border: none;
       border-radius: 8px;
-      background: var(--accent);
+      background: var(--primary);
       color: #fff;
       font-size: .88rem;
       font-weight: 500;
       cursor: pointer;
       transition: background .15s;
     }
-    .btn-submit:hover { background: var(--accent-dark); }
+    .btn-submit:hover { background: var(--primary-dark); }
     .btn-submit:disabled { opacity: .5; cursor: not-allowed; }
 
     /* ── Toast ── */
