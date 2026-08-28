@@ -10,19 +10,65 @@ jobs:
   ping:
     runs-on: ubuntu-latest
     steps:
-      - name: Ping Supabase REST API
-        run: |
-          RESPONSE=$(curl -s -w "\n%{http_code}" \
-            -H "apikey: ${ANON_KEY}" \
-            -H "Authorization: Bearer ${ANON_KEY}" \
-            "${SUPABASE_URL}/rest/v1/")
-          HTTP_CODE=$(echo "$RESPONSE" | tail -1)
-          echo "HTTP Status: $HTTP_CODE"
-          if [ "$HTTP_CODE" = "200" ] || [ "$HTTP_CODE" = "401" ]; then
-            echo "✅ Supabase is alive (HTTP $HTTP_CODE) at $(date -u +%Y-%m-%dT%H:%MZ)"
-          else
-            echo "⚠️ Unexpected response: HTTP $HTTP_CODE"
-          fi
+      - name: Ping & auto-restore Supabase
         env:
           SUPABASE_URL: https://qknojxdhdjqjdoqjdnyu.supabase.co
+          PROJECT_REF: qknojxdhdjqjdoqjdnyu
           ANON_KEY: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFrbm9qeGRoZGpxamRvcWpkbnl1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ1Mzg2ODAsImV4cCI6MjA5MDExNDY4MH0.8BnUklTASBnzgZgu-_hbcVNoZ_LcUcLCR_9P5y8PWjo
+          SUPA_PAT: ${{ secrets.SUPABASE_PAT }}
+        run: |
+          ping() {
+            curl -s -o /dev/null -m 20 -w "%{http_code}" \
+              -H "apikey: ${ANON_KEY}" \
+              -H "Authorization: Bearer ${ANON_KEY}" \
+              "${SUPABASE_URL}/rest/v1/"
+          }
+
+          echo "== 第一步：直接 ping =="
+          CODE=$(ping)
+          echo "HTTP Status: $CODE"
+
+          if [ "$CODE" = "200" ] || [ "$CODE" = "401" ]; then
+            echo "✅ Supabase is alive (HTTP $CODE) at $(date -u +%Y-%m-%dT%H:%MZ)"
+            exit 0
+          fi
+
+          echo "== 项目无响应，可能已暂停 =="
+          if [ -z "$SUPA_PAT" ]; then
+            echo "❌ 未配置 SUPABASE_PAT secret，无法自动恢复。"
+            echo "请到 supabase.com 控制台手动 Restore，并参照 README 配置令牌。"
+            exit 1
+          fi
+
+          echo "== 第二步：查询项目状态 =="
+          STATUS=$(curl -s -m 20 -H "Authorization: Bearer ${SUPA_PAT}" \
+            "https://api.supabase.com/v1/projects/${PROJECT_REF}" \
+            | python3 -c "import json,sys; print(json.load(sys.stdin).get('status','unknown'))")
+          echo "Project status: $STATUS"
+
+          if [ "$STATUS" = "paused" ] || [ "$STATUS" = "pause_failed" ]; then
+            echo "== 第三步：自动恢复 =="
+            curl -s -X POST -m 30 -H "Authorization: Bearer ${SUPA_PAT}" \
+              "https://api.supabase.com/v1/projects/${PROJECT_REF}/restore" -o /dev/null
+            echo "已发出恢复请求，等待 120 秒..."
+            sleep 120
+          fi
+
+          echo "== 第四步：复查 =="
+          CODE=$(ping)
+          echo "HTTP Status: $CODE"
+          if [ "$CODE" = "200" ] || [ "$CODE" = "401" ]; then
+            echo "✅ Supabase 已恢复 (HTTP $CODE)"
+            exit 0
+          fi
+
+          # 再等 60 秒重试一次（恢复可能较慢）
+          sleep 60
+          CODE=$(ping)
+          echo "HTTP Status (retry): $CODE"
+          if [ "$CODE" = "200" ] || [ "$CODE" = "401" ]; then
+            echo "✅ Supabase 已恢复 (HTTP $CODE)"
+            exit 0
+          fi
+          echo "❌ Supabase 仍不可用，需人工处理"
+          exit 1
