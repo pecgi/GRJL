@@ -1,0 +1,12 @@
+# NAS 后端运行时产物（数据库与密钥不进仓库）
+nas/data/
+nas/*.db
+nas/*.db-wal
+nas/*.db-shm
+nas/.env
+
+# 系统文件
+.DS_Store
+Thumbs.db
+__pycache__/
+*.pyc

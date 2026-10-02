@@ -1,0 +1,14 @@
+{
+  "name": "grjl-nas-backend",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "GRJL 自托管后端（零依赖：Node 内置模块 + node:sqlite）",
+  "engines": {
+    "node": ">=22.5.0"
+  },
+  "scripts": {
+    "start": "node server.js",
+    "selftest": "node selftest.js"
+  }
+}

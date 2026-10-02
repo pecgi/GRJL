@@ -334,6 +334,7 @@
   </div>
 </div>
 
+<script src="/sb-shim.js"></script>
 <script>
 // ──────────────────────────────────────────────
 //  Supabase 配置
@@ -371,7 +372,7 @@ async function fetchMonthEntries(year, month) {
   const to   = `${year}-${String(month).padStart(2,'0')}-31`;
   try {
     const res = await fetch(
-      `${SUPABASE_URL}/rest/v1/diary_entries?date=gte.${from}&date=lte.${to}&select=date,title,body,saved_at`,
+      `/rest/v1/diary_entries?date=gte.${from}&date=lte.${to}&select=date,title,body,saved_at`,
       {
         headers: {
           'apikey': SUPABASE_ANON,

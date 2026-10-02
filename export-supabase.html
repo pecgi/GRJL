@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>导出旧数据 · GRJL</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+  :root { --bg:#f6f4f1; --card:#fff; --line:#e6e0d8; --text:#2f2b26; --muted:#8a8175; --accent:#b45309; }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--bg); color:var(--text);
+         font:15px/1.7 -apple-system,"PingFang SC","Microsoft YaHei",sans-serif;
+         display:flex; align-items:center; justify-content:center; min-height:100vh; padding:24px; }
+  .box { background:var(--card); border:1px solid var(--line); border-radius:14px;
+         max-width:620px; width:100%; padding:32px; }
+  h1 { font-size:20px; margin:0 0 6px; }
+  .sub { color:var(--muted); font-size:13px; margin-bottom:24px; }
+  button { background:var(--accent); color:#fff; border:none; border-radius:8px;
+           padding:11px 20px; font-size:15px; cursor:pointer; }
+  button:disabled { opacity:.5; cursor:default; }
+  button.ghost { background:transparent; color:var(--accent); border:1px solid var(--accent); }
+  .row { display:flex; gap:10px; align-items:center; flex-wrap:wrap; }
+  pre { background:#faf8f5; border:1px solid var(--line); border-radius:8px; padding:14px;
+        font-size:13px; max-height:340px; overflow:auto; white-space:pre-wrap; word-break:break-all; }
+  .ok { color:#15803d; } .warn { color:#b45309; } .err { color:#b91c1c; }
+  ol { padding-left:22px; font-size:13.5px; color:var(--muted); }
+</style>
+</head>
+<body>
+<div class="box">
+  <h1>导出旧数据</h1>
+  <div class="sub">把 Supabase 里的资产、快照、日记、订阅、文章全部导出成一个 JSON 文件，用于导入 NAS。</div>
+
+  <div class="row" style="margin-bottom:20px">
+    <button id="btn-login">用 GitHub 登录并导出</button>
+    <button id="btn-download" class="ghost" style="display:none">重新下载文件</button>
+  </div>
+
+  <div id="log"><pre>等待登录…</pre></div>
+
+  <ol>
+    <li>先确认 Supabase 项目已恢复（控制台点 Resume project）</li>
+    <li>点上面的按钮登录，导出完成后会得到 <code>grjl-supabase-backup.json</code></li>
+    <li>把这个文件传到 NAS，执行 <code>node import-backup.js grjl-supabase-backup.json</code></li>
+  </ol>
+</div>
+
+<script>
+// 旧 Supabase 项目（导出用，迁移完成后本页可以删掉）
+const SUPABASE_URL = 'https://qknojxdhdjqjdoqjdnyu.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFrbm9qeGRoZGpxamRvcWpkbnl1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ1Mzg2ODAsImV4cCI6MjA5MDExNDY4MH0.8BnUklTASBnzgZgu-_hbcVNoZ_LcUcLCR_9P5y8PWjo';
+const TABLES = ['assets', 'asset_snapshots', 'diary_entries', 'subscriptions', 'articles'];
+
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+const logEl = document.getElementById('log');
+const btnLogin = document.getElementById('btn-login');
+const btnDownload = document.getElementById('btn-download');
+let result = null;
+
+function log(msg, cls) {
+  logEl.innerHTML = '<pre' + (cls ? ' class="' + cls + '"' : '') + '>' + msg + '</pre>';
+}
+
+function session() {
+  try {
+    const key = 'sb-' + SUPABASE_URL.split('//')[1].split('.')[0] + '-auth-token';
+    const raw = localStorage.getItem(key);
+    return raw ? JSON.parse(raw) : null;
+  } catch (e) { return null; }
+}
+
+btnLogin.onclick = async () => {
+  const s = session();
+  if (!s || !s.access_token) {
+    log('跳转 GitHub 登录…');
+    await sb.auth.signInWithOAuth({ provider: 'github', options: { redirectTo: location.href.split('#')[0] } });
+    return;
+  }
+  await runExport(s);
+};
+
+async function runExport(s) {
+  btnLogin.disabled = true;
+  const out = { exported_at: new Date().toISOString(), source: 'supabase', tables: {} };
+  let lines = [];
+  for (const t of TABLES) {
+    try {
+      const res = await fetch(SUPABASE_URL + '/rest/v1/' + t + '?select=*', {
+        headers: { apikey: SUPABASE_KEY, Authorization: 'Bearer ' + s.access_token },
+      });
+      if (!res.ok) {
+        const txt = await res.text();
+        lines.push('<span class="err">✗ ' + t + '：HTTP ' + res.status + ' ' + txt.slice(0, 120) + '</span>');
+        out.tables[t] = [];
+        continue;
+      }
+      const rows = await res.json();
+      out.tables[t] = rows;
+      lines.push('<span class="ok">✓ ' + t + '：' + rows.length + ' 条</span>');
+    } catch (e) {
+      lines.push('<span class="err">✗ ' + t + '：' + e.message + '</span>');
+      out.tables[t] = [];
+    }
+  }
+
+  result = out;
+  const total = TABLES.reduce((n, t) => n + (out.tables[t] || []).length, 0);
+  lines.push('');
+  lines.push(total ? '<span class="ok">共 ' + total + ' 条，点「重新下载文件」保存。</span>'
+                   : '<span class="warn">一条数据都没读到。可能项目还没恢复，或当前账号下没有数据。</span>');
+  log(lines.join('\n'));
+  btnDownload.style.display = total ? 'inline-block' : 'none';
+  btnLogin.disabled = false;
+  if (total) download();
+}
+
+function download() {
+  if (!result) return;
+  const blob = new Blob([JSON.stringify(result, null, 2)], { type: 'application/json' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'grjl-supabase-backup.json';
+  a.click();
+}
+
+btnDownload.onclick = download;
+
+// 登录回来自动继续
+const s = session();
+if (s && s.access_token) {
+  log('检测到已登录，开始导出…');
+  runExport(s);
+} else {
+  log('未登录。点击上方按钮开始。');
+}
+</script>
+</body>
+</html>

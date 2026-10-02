@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>日记 · 生活数字记录</title>
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+  <script src="/sb-shim.js"></script>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -391,7 +391,7 @@ async function markToday() {
   }
   // 写入云端一条空打卡（upsert，带 on_conflict）
   try {
-    const res = await fetch(`${SUPABASE_URL}/rest/v1/diary_entries?on_conflict=user_id,date`, {
+    const res = await fetch(`/rest/v1/diary_entries?on_conflict=user_id,date`, {
       method: 'POST',
       headers: {
         'apikey': SUPABASE_ANON,
@@ -439,7 +439,7 @@ async function init() {
   // 再从云端拉取全量数据
   try {
     const res = await fetch(
-      `${SUPABASE_URL}/rest/v1/diary_entries?select=date,title,body,saved_at&order=date.desc`,
+      `/rest/v1/diary_entries?select=date,title,body,saved_at&order=date.desc`,
       {
         headers: {
           'apikey': SUPABASE_ANON,

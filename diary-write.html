@@ -236,6 +236,7 @@
 <div class="toast" id="toast"></div>
 <div class="saving-mask" id="saving-mask">保存中…</div>
 
+<script src="/sb-shim.js"></script>
 <script>
 // ────────────────────────────────────────────
 //  Supabase 配置（原生 fetch 方案）
@@ -271,7 +272,7 @@ function getUserId() {
 async function sbUpsert(data) {
   const token = getToken();
   const res = await fetch(
-    `${SUPABASE_URL}/rest/v1/diary_entries?on_conflict=user_id,date`,
+    `/rest/v1/diary_entries?on_conflict=user_id,date`,
     {
       method: 'POST',
       headers: {
@@ -363,7 +364,7 @@ async function initPage() {
   // 异步从云端拉取最新内容
   try {
     const res = await fetch(
-      `${SUPABASE_URL}/rest/v1/diary_entries?date=eq.${currentDate}&select=title,body,saved_at`,
+      `/rest/v1/diary_entries?date=eq.${currentDate}&select=title,body,saved_at`,
       {
         headers: {
           'apikey': SUPABASE_ANON,
@@ -424,7 +425,7 @@ async function onDateChange() {
   // 再从云端刷新
   try {
     const res = await fetch(
-      `${SUPABASE_URL}/rest/v1/diary_entries?date=eq.${currentDate}&select=title,body,saved_at`,
+      `/rest/v1/diary_entries?date=eq.${currentDate}&select=title,body,saved_at`,
       {
         headers: {
           'apikey': SUPABASE_ANON,

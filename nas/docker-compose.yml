@@ -1,0 +1,16 @@
+services:
+  grjl:
+    build: .
+    image: grjl-nas:latest
+    container_name: grjl
+    restart: unless-stopped
+    env_file:
+      - .env
+    ports:
+      # 只在本机/局域网暴露；公网走 Tailscale Funnel，不直接映射到公网
+      - "8080:8080"
+    volumes:
+      # 站点文件（HTML/JS/CSS）只读挂载，改页面不用重建镜像
+      - ../:/site:ro
+      # 数据库持久化目录 —— 千万保留，删了就丢数据
+      - ./data:/data

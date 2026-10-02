@@ -338,6 +338,10 @@ const updateTimeEl = document.getElementById('update-time');
 
 // 存储所有仓库数据，供下载功能使用
 let allRepos = [];
+
+// Repo metadata: description, keywords, URL
+// 手动补充中文描述，优先级高于 GitHub API 返回的 description
+const REPO_META = {
   'guizang-s-prompt': {
     desc: '这里是歸藏的提示词储存库，存放归藏撰写的所有 AI 模型提示词，持续更新。',
     keywords: ['Prompt', '提示词', '合集'],
