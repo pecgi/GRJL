@@ -1,74 +1,86 @@
 name: Supabase Keep-Alive
 
+# ⚠️ 提醒：GitHub 会在仓库连续 60 天无任何 commit 后自动禁用本定时任务。
+#     如果哪天发现没有新的运行记录（不是红色，而是压根没跑），请先提交一次代码重新激活。
+
 on:
   schedule:
-    # 每天 UTC 02:00 执行（北京时间 10:00）
+    # 每天两次：UTC 02:00（北京 10:00）和 UTC 14:00（北京 22:00）
     - cron: '0 2 * * *'
+    - cron: '0 14 * * *'
   workflow_dispatch:  # 支持手动触发
 
 jobs:
-  ping:
+  keep-alive:
     runs-on: ubuntu-latest
+    env:
+      SUPABASE_URL: https://qknojxdhdjqjdoqjdnyu.supabase.co
+      PROJECT_REF: qknojxdhdjqjdoqjdnyu
+      ANON_KEY: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFrbm9qeGRoZGpxamRvcWpkbnl1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ1Mzg2ODAsImV4cCI6MjA5MDExNDY4MH0.8BnUklTASBnzgZgu-_hbcVNoZ_LcUcLCR_9P5y8PWjo
+      SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
+      SUPA_PAT: ${{ secrets.SUPABASE_PAT }}
     steps:
-      - name: Ping & auto-restore Supabase
-        env:
-          SUPABASE_URL: https://qknojxdhdjqjdoqjdnyu.supabase.co
-          PROJECT_REF: qknojxdhdjqjdoqjdnyu
-          ANON_KEY: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFrbm9qeGRoZGpxamRvcWpkbnl1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ1Mzg2ODAsImV4cCI6MjA5MDExNDY4MH0.8BnUklTASBnzgZgu-_hbcVNoZ_LcUcLCR_9P5y8PWjo
-          SUPA_PAT: ${{ secrets.SUPABASE_PAT }}
+      # 关键：只 ping REST 根路径不算「数据库活动」，无法阻止暂停。
+      # 必须对真实表发起 select，才会被计入活跃度。
+      - name: Query database (real activity)
         run: |
-          ping() {
-            curl -s -o /dev/null -m 20 -w "%{http_code}" \
-              -H "apikey: ${ANON_KEY}" \
-              -H "Authorization: Bearer ${ANON_KEY}" \
-              "${SUPABASE_URL}/rest/v1/"
+          KEY="${SERVICE_KEY:-$ANON_KEY}"
+          QUERY() {
+            curl -s -o /dev/null -m 25 -w "%{http_code}" \
+              -H "apikey: ${KEY}" -H "Authorization: Bearer ${KEY}" \
+              -H "Accept-Profile: public" \
+              "${SUPABASE_URL}/rest/v1/${1}?select=id&limit=1"
           }
-
-          echo "== 第一步：直接 ping =="
-          CODE=$(ping)
-          echo "HTTP Status: $CODE"
-
-          if [ "$CODE" = "200" ] || [ "$CODE" = "401" ]; then
-            echo "✅ Supabase is alive (HTTP $CODE) at $(date -u +%Y-%m-%dT%H:%MZ)"
-            exit 0
+          OK=0
+          for T in assets asset_snapshots; do
+            C=$(QUERY "$T")
+            echo "  ${T}: HTTP $C"
+            [ "$C" = "200" ] || [ "$C" = "401" ] || [ "$C" = "416" ] && OK=1
+          done
+          if [ "$OK" = "1" ]; then
+            echo "✅ 数据库有响应 ($(date -u +%Y-%m-%dT%H:%MZ))"
+            echo "ALIVE=1" >> $GITHUB_ENV
+          else
+            echo "⚠️ 数据库无响应，项目可能已暂停"
+            echo "ALIVE=0" >> $GITHUB_ENV
           fi
 
-          echo "== 项目无响应，可能已暂停 =="
+      # 已经活着就不用折腾了
+      - name: Auto restore if paused
+        if: env.ALIVE == '0'
+        run: |
           if [ -z "$SUPA_PAT" ]; then
             echo "❌ 未配置 SUPABASE_PAT secret，无法自动恢复。"
-            echo "请到 supabase.com 控制台手动 Restore，并参照 README 配置令牌。"
+            echo "   解决方法：supabase.com → Account → Access Tokens 生成令牌，"
+            echo "   再到本仓库 Settings → Secrets → Actions 添加 SUPABASE_PAT。"
             exit 1
           fi
-
-          echo "== 第二步：查询项目状态 =="
-          STATUS=$(curl -s -m 20 -H "Authorization: Bearer ${SUPA_PAT}" \
+          STATUS=$(curl -s -m 25 -H "Authorization: Bearer ${SUPA_PAT}" \
             "https://api.supabase.com/v1/projects/${PROJECT_REF}" \
-            | python3 -c "import json,sys; print(json.load(sys.stdin).get('status','unknown'))")
-          echo "Project status: $STATUS"
-
-          if [ "$STATUS" = "paused" ] || [ "$STATUS" = "pause_failed" ]; then
-            echo "== 第三步：自动恢复 =="
-            curl -s -X POST -m 30 -H "Authorization: Bearer ${SUPA_PAT}" \
-              "https://api.supabase.com/v1/projects/${PROJECT_REF}/restore" -o /dev/null
-            echo "已发出恢复请求，等待 120 秒..."
-            sleep 120
+            | python3 -c "import json,sys; d=json.load(sys.stdin); print(str(d.get('status','unknown')).lower())" 2>/dev/null)
+          echo "项目状态: ${STATUS}"
+          if [ "$STATUS" = "paused" ] || [ "$STATUS" = "pause_failed" ] || [ "$STATUS" = "unknown" ]; then
+            echo "发出恢复请求..."
+            curl -s -m 30 -X POST -H "Authorization: Bearer ${SUPA_PAT}" \
+              "https://api.supabase.com/v1/projects/${PROJECT_REF}/restore" -o /dev/null -w "restore HTTP %{http_code}\n"
+            echo "等待 150 秒让实例启动..."
+            sleep 150
           fi
 
-          echo "== 第四步：复查 =="
-          CODE=$(ping)
-          echo "HTTP Status: $CODE"
-          if [ "$CODE" = "200" ] || [ "$CODE" = "401" ]; then
-            echo "✅ Supabase 已恢复 (HTTP $CODE)"
-            exit 0
-          fi
-
-          # 再等 60 秒重试一次（恢复可能较慢）
-          sleep 60
-          CODE=$(ping)
-          echo "HTTP Status (retry): $CODE"
-          if [ "$CODE" = "200" ] || [ "$CODE" = "401" ]; then
-            echo "✅ Supabase 已恢复 (HTTP $CODE)"
-            exit 0
-          fi
-          echo "❌ Supabase 仍不可用，需人工处理"
+      - name: Verify after restore
+        if: env.ALIVE == '0'
+        run: |
+          KEY="${SERVICE_KEY:-$ANON_KEY}"
+          for i in 1 2 3; do
+            C=$(curl -s -o /dev/null -m 25 -w "%{http_code}" \
+              -H "apikey: ${KEY}" -H "Authorization: Bearer ${KEY}" \
+              "${SUPABASE_URL}/rest/v1/assets?select=id&limit=1")
+            echo "复查 #$i: HTTP $C"
+            if [ "$C" = "200" ] || [ "$C" = "401" ]; then
+              echo "✅ Supabase 已恢复"
+              exit 0
+            fi
+            [ $i -lt 3 ] && sleep 90
+          done
+          echo "❌ Supabase 仍不可用，需到控制台人工处理"
           exit 1
